@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BeautyCam — Live Filters & Auto Capture</title>
+  <style>
+    :root {
+      --bg1: #0f1724;
+      --bg2: #102236;
+      --card: rgba(255, 255, 255, 0.06);
+      --accent: #7c5cff;
+      --muted: rgba(255, 255, 255, 0.7);
+      --glass: rgba(255, 255, 255, 0.04);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: #e6eef8;
+    }
+
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      gap: 28px
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+      border-radius: 16px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      padding: 18px;
+      width: 920px;
+      max-width: calc(100% - 48px);
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.035);
+    }
+
+    /* Left: camera */
+    .cam-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    .viewer {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(10, 12, 20, 0.6), rgba(10, 12, 20, 0.4));
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video,
+    canvas.preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transform: scaleX(-1);
+      /* mirror */
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      color: var(--muted);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn.primary {
+      background: linear-gradient(90deg, var(--accent), #5ad7ff);
+      color: #06101a;
+      border: none;
+      box-shadow: 0 6px 18px rgba(124, 92, 255, 0.2);
+    }
+
+    .btn.warn {
+      background: linear-gradient(90deg, #ff7b7b, #ffb47b);
+      color: #211;
+    }
+
+    .presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .preset {
+      background: var(--glass);
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 13px;
+    }
+
+    .sliders {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding-top: 6px
+    }
+
+    .slider {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 6px
+    }
+
+    input[type=range] {
+      width: 100%
+    }
+
+    /* Right: gallery */
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    .side-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .count {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7)
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      overflow: auto;
+      max-height: 480px;
+      padding: 6px
+    }
+
+    .thumb {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.03)
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      display: block
+    }
+
+    .thumb .meta {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 6px;
+      border-radius: 8px;
+      font-size: 12px
+    }
+
+    .thumb .actions {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      display: flex;
+      gap: 6px
+    }
+
+    .small {
+      padding: 6px 8px;
+      font-size: 13px;
+      border-radius: 8px
+    }
+
+    .note {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6)
+    }
+
+    footer {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 8px;
+      text-align: center
+    }
+
+    .toprow {
+      display: flex;
+      gap: 10px;
+      align-items: center
+    }
+
+    /* responsive */
+    @media (max-width:980px) {
+      .panel {
+        grid-template-columns: 1fr;
+        width: 96%
+      }
+
+      .gallery {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    @media (max-width:640px) {
+      .gallery {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="panel" role="application" aria-label="Beauty camera application">
+      <div class="cam-wrap">
+        <div class="toprow">
+          <h2 style="margin:0">BeautyCam</h2>
+          <div style="margin-left:auto" class="note">Local-only · Camera required</div>
+        </div>
+
+        <div class="viewer" id="viewer">
+          <video id="video" autoplay playsinline></video>
+          <!-- visible canvas is used for mirrored preview (so filters show), but video can be used directly for performance.
+             We will draw video->canvas for captures so filter applied during toBlob -->
+          <canvas class="preview" id="previewCanvas" style="display:none"></canvas>
+          <div id="noCam" style="position:absolute;color:rgba(255,255,255,0.5);text-align:center;padding:20px">
+            <div style="font-size:20px;margin-bottom:8px">Camera not started</div>
+            <div class="note">Grant camera permission and click <strong>Start Camera</strong></div>
+          </div>
+        </div>
+
+        <div class="controls" style="margin-top:8px">
+          <button class="btn primary" id="startCam">Start Camera</button>
+          <button class="btn" id="stopCam" disabled>Stop Camera</button>
+          <button class="btn primary" id="captureBtn" title="Take a photo">Capture</button>
+
+          <label style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+            <input type="checkbox" id="autoCheckbox">
+            <span style="font-size:13px">Enable Auto-Capture</span>
+          </label>
+
+          <button class="btn" id="autoStartBtn">Start Auto</button>
+          <button class="btn warn" id="clearGalleryBtn">Clear Gallery</button>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Presets</div>
+            <div class="presets" id="presets">
+              <div class="preset" data-preset="natural">Natural</div>
+              <div class="preset" data-preset="smooth">Smooth</div>
+              <div class="preset" data-preset="glam">Glam</div>
+              <div class="preset" data-preset="vintage">Vintage</div>
+              <div class="preset" data-preset="high-contrast">High Contrast</div>
+            </div>
+          </div>
+
+          <div style="text-align:right">
+            <div class="note">Auto-capture interval: <strong>3 seconds</strong></div>
+            <div class="note">Images saved locally in browser (IndexedDB)</div>
+          </div>
+        </div>
+
+        <div class="sliders" style="margin-top:8px">
+          <div class="slider">
+            <label for="brightness">Brightness <span id="brightnessVal">1</span></label>
+            <input type="range" id="brightness" min="0.6" max="1.6" step="0.01" value="1">
+          </div>
+          <div class="slider">
+            <label for="contrast">Contrast <span id="contrastVal">1</span></label>
+            <input type="range" id="contrast" min="0.6" max="1.6" step="0.01" value="1">
+          </div>
+          <div class="slider">
+            <label for="saturate">Saturation <span id="saturateVal">1</span></label>
+            <input type="range" id="saturate" min="0.5" max="1.8" step="0.01" value="1">
+          </div>
+          <div class="slider">
+            <label for="hue">Hue rotate <span id="hueVal">0°</span></label>
+            <input type="range" id="hue" min="0" max="360" step="1" value="0">
+          </div>
+          <div class="slider">
+            <label for="blur">Smooth (blur) <span id="blurVal">0px</span></label>
+            <input type="range" id="blur" min="0" max="4" step="0.1" value="0">
+          </div>
+          <div class="slider">
+            <label for="scale">Zoom (crop) <span id="scaleVal">1x</span></label>
+            <input type="range" id="scale" min="1" max="1.8" step="0.01" value="1">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="side">
+        <div class="side-header">
+          <div>
+            <div style="font-weight:700">Gallery</div>
+            <div class="count" id="galleryCount">0 images</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="small" id="downloadAll">Download All</button>
+          </div>
+        </div>
+
+        <div class="gallery" id="gallery"></div>
+
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+          <div class="note">Stored locally — clear when done to remove images.</div>
+          <div style="text-align:right">
+            <button class="btn" id="openSettings">Settings</button>
+          </div>
+        </div>
+
+        <footer>
+          Tip: use the sliders to fine-tune the look. 'Smooth' uses a gentle blur to simulate skin smoothing.
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      BeautyCam - single-file app
+      - Uses getUserMedia for camera
+      - Uses a canvas with ctx.filter to apply filters during capture
+      - Saves photos to IndexedDB (local)
+      - Auto-capture when enabled: every 3 seconds
+    */
+
+    (() => {
+      // elements
+      const startCamBtn = document.getElementById('startCam');
+      const stopCamBtn = document.getElementById('stopCam');
+      const video = document.getElementById('video');
+      const noCam = document.getElementById('noCam');
+      const previewCanvas = document.getElementById('previewCanvas');
+      const captureBtn = document.getElementById('captureBtn');
+      const presetsEl = document.getElementById('presets');
+      const galleryEl = document.getElementById('gallery');
+      const galleryCount = document.getElementById('galleryCount');
+      const autoCheckbox = document.getElementById('autoCheckbox');
+      const autoStartBtn = document.getElementById('autoStartBtn');
+      const clearGalleryBtn = document.getElementById('clearGalleryBtn');
+      const downloadAllBtn = document.getElementById('downloadAll');
+
+      // sliders
+      const sliders = {
+        brightness: document.getElementById('brightness'),
+        contrast: document.getElementById('contrast'),
+        saturate: document.getElementById('saturate'),
+        hue: document.getElementById('hue'),
+        blur: document.getElementById('blur'),
+        scale: document.getElementById('scale')
+      };
+      const valDisplays = {
+        brightnessVal: document.getElementById('brightnessVal'),
+        contrastVal: document.getElementById('contrastVal'),
+        saturateVal: document.getElementById('saturateVal'),
+        hueVal: document.getElementById('hueVal'),
+        blurVal: document.getElementById('blurVal'),
+        scaleVal: document.getElementById('scaleVal')
+      };
+
+      // state
+      let stream = null;
+      let autoInterval = null;
+      const AUTO_MS = 3000; // every 3 seconds
+      const DB_NAME = 'BeautyCamDB';
+      const DB_STORE = 'photos';
+
+      // ------- IndexedDB helper --------
+      function openDB() {
+        return new Promise((res, rej) => {
+          const r = indexedDB.open(DB_NAME, 1);
+          r.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(DB_STORE)) {
+              db.createObjectStore(DB_STORE, { keyPath: 'id', autoIncrement: true });
+            }
+          };
+          r.onsuccess = () => res(r.result);
+          r.onerror = () => rej(r.error);
+        });
+      }
+
+      async function savePhoto(blob, meta = {}) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          const store = tx.objectStore(DB_STORE);
+          const item = {
+            blob,
+            createdAt: Date.now(),
+            meta
+          };
+          const req = store.add(item);
+          req.onsuccess = () => { res(req.result); db.close(); refreshGallery(); };
+          req.onerror = () => { rej(req.error); db.close(); };
+        });
+      }
+
+      async function listPhotos() {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+          const tx = db.transaction(DB_STORE, 'readonly');
+          const store = tx.objectStore(DB_STORE);
+          const req = store.getAll();
+          req.onsuccess = () => { res(req.result); db.close(); };
+          req.onerror = () => { rej(req.error); db.close(); };
+        });
+      }
+
+      async function getPhoto(id) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+          const tx = db.transaction(DB_STORE, 'readonly');
+          const store = tx.objectStore(DB_STORE);
+          const req = store.get(id);
+          req.onsuccess = () => { res(req.result); db.close(); };
+          req.onerror = () => { rej(req.error); db.close(); };
+        });
+      }
+
+      async function deletePhoto(id) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          const store = tx.objectStore(DB_STORE);
+          const req = store.delete(id);
+          req.onsuccess = () => { res(); db.close(); refreshGallery(); };
+          req.onerror = () => { rej(req.error); db.close(); };
+        });
+      }
+
+      async function clearGallery() {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          const store = tx.objectStore(DB_STORE);
+          const req = store.clear();
+          req.onsuccess = () => { res(); db.close(); refreshGallery(); };
+          req.onerror = () => { rej(req.error); db.close(); };
+        });
+      }
+
+      // -------- camera control ----------
+      startCamBtn.addEventListener('click', async () => {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          video.srcObject = stream;
+          video.play();
+          noCam.style.display = 'none';
+          stopCamBtn.disabled = false;
+          startCamBtn.disabled = true;
+          previewCanvas.style.display = 'block';
+          // set canvas size to video size when ready
+          video.addEventListener('loadedmetadata', () => {
+            previewCanvas.width = video.videoWidth;
+            previewCanvas.height = video.videoHeight;
+          }, { once: true });
+        } catch (err) {
+          console.error('Camera start failed', err);
+          alert('Unable to access camera. Please allow camera permissions or use a compatible device.');
+        }
+      });
+
+      stopCamBtn.addEventListener('click', () => {
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+        }
+        video.pause();
+        video.srcObject = null;
+        noCam.style.display = '';
+        stopCamBtn.disabled = true;
+        startCamBtn.disabled = false;
+        previewCanvas.style.display = 'none';
+        stopAutoCapture();
+      });
+
+      // -------- filters and drawing ----------
+      function getFilterString() {
+        const b = parseFloat(sliders.brightness.value);
+        const c = parseFloat(sliders.contrast.value);
+        const s = parseFloat(sliders.saturate.value);
+        const h = parseInt(sliders.hue.value, 10);
+        const bl = parseFloat(sliders.blur.value);
+        // ctx.filter supports blur, brightness, contrast, saturate, hue-rotate
+        const f = `blur(${bl}px) brightness(${b}) contrast(${c}) saturate(${s}) hue-rotate(${h}deg)`;
+        return f;
+      }
+
+      function updateValueDisplays() {
+        valDisplays.brightnessVal.textContent = Number(sliders.brightness.value).toFixed(2);
+        valDisplays.contrastVal.textContent = Number(sliders.contrast.value).toFixed(2);
+        valDisplays.saturateVal.textContent = Number(sliders.saturate.value).toFixed(2);
+        valDisplays.hueVal.textContent = sliders.hue.value + '°';
+        valDisplays.blurVal.textContent = sliders.blur.value + 'px';
+        valDisplays.scaleVal.textContent = sliders.scale.value + 'x';
+      }
+
+      Object.values(sliders).forEach(s => s.addEventListener('input', updateValueDisplays));
+      updateValueDisplays();
+
+      // Presets
+      const PRESETS = {
+        'natural': { brightness: 1, contrast: 1, saturate: 1, hue: 0, blur: 0, scale: 1 },
+        'smooth': { brightness: 1.05, contrast: 0.98, saturate: 1.06, hue: 0, blur: 1.6, scale: 1.03 },
+        'glam': { brightness: 1.08, contrast: 1.12, saturate: 1.2, hue: 6, blur: 0.6, scale: 1.05 },
+        'vintage': { brightness: 0.98, contrast: 0.9, saturate: 0.85, hue: 10, blur: 0.1, scale: 1 },
+        'high-contrast': { brightness: 1, contrast: 1.25, saturate: 1.1, hue: 0, blur: 0, scale: 1.02 }
+      };
+
+      presetsEl.addEventListener('click', (e) => {
+        const p = e.target.closest('.preset');
+        if (!p) return;
+        const k = p.dataset.preset;
+        const cfg = PRESETS[k];
+        if (!cfg) return;
+        Object.keys(cfg).forEach(k2 => {
+          if (sliders[k2]) sliders[k2].value = cfg[k2];
+        });
+        updateValueDisplays();
+      });
+
+      // Draw video frame into canvas using filter
+      function drawToCanvas() {
+        if (!video || video.readyState < 2) return;
+        const canvas = previewCanvas;
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        // apply scale/zoom (crop center)
+        const scale = parseFloat(sliders.scale.value) || 1;
+        const srcW = video.videoWidth;
+        const srcH = video.videoHeight;
+        const drawW = Math.round(srcW / scale);
+        const drawH = Math.round(srcH / scale);
+        const sx = Math.max(0, Math.round((srcW - drawW) / 2));
+        const sy = Math.max(0, Math.round((srcH - drawH) / 2));
+        ctx.save();
+        ctx.filter = getFilterString();
+        // mirror horizontally to match preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, sx, sy, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
+      // Update preview periodically for a smooth UI
+      let rafId = null;
+      function startPreviewLoop() {
+        if (rafId) cancelAnimationFrame(rafId);
+        (function loop() {
+          drawToCanvas();
+          rafId = requestAnimationFrame(loop);
+        })();
+      }
+
+      // start preview when video plays
+      video.addEventListener('play', () => startPreviewLoop());
+
+      // -------- capture & saving --------
+      captureBtn.addEventListener('click', () => captureAndSave());
+
+      async function captureAndSave() {
+        if (!video || video.readyState < 2) {
+          alert('Camera not ready.');
+          return;
+        }
+        const canvas = previewCanvas;
+        // ensure current frame drawn
+        drawToCanvas();
+        // convert to blob (jpeg)
+        return new Promise((res, rej) => {
+          canvas.toBlob(async (blob) => {
+            if (!blob) { rej('no blob'); return; }
+            // meta: filters
+            const meta = {
+              filters: {
+                brightness: sliders.brightness.value,
+                contrast: sliders.contrast.value,
+                saturate: sliders.saturate.value,
+                hue: sliders.hue.value,
+                blur: sliders.blur.value,
+                scale: sliders.scale.value
+              }
+            };
+            try {
+              await savePhoto(blob, meta);
+              res(true);
+            } catch (e) {
+              console.error('save error', e);
+              rej(e);
+            }
+          }, 'image/jpeg', 0.92);
+        });
+      }
+
+      // --------- Auto capture ----------
+      autoStartBtn.addEventListener('click', () => {
+        if (!autoCheckbox.checked) {
+          alert('Please check "Enable Auto-Capture" first.');
+          return;
+        }
+        if (autoInterval) {
+          stopAutoCapture();
+        } else {
+          startAutoCapture();
+        }
+      });
+
+      function startAutoCapture() {
+        if (!autoCheckbox.checked) {
+          alert('Enable auto-capture checkbox first.');
+          return;
+        }
+        if (autoInterval) return;
+        autoStartBtn.textContent = 'Stop Auto';
+        autoStartBtn.classList.add('warn');
+        // capture immediately then every AUTO_MS
+        captureAndSave().catch(() => { });
+        autoInterval = setInterval(() => {
+          captureAndSave().catch(() => { });
+        }, AUTO_MS);
+      }
+
+      function stopAutoCapture() {
+        if (!autoInterval) return;
+        clearInterval(autoInterval);
+        autoInterval = null;
+        autoStartBtn.textContent = 'Start Auto';
+        autoStartBtn.classList.remove('warn');
+      }
+
+      // when user unchecks auto checkbox, stop
+      autoCheckbox.addEventListener('change', () => {
+        if (!autoCheckbox.checked) stopAutoCapture();
+      });
+
+      // -------- gallery UI ----------
+      async function refreshGallery() {
+        const items = await listPhotos();
+        galleryEl.innerHTML = '';
+        if (!items || items.length === 0) {
+          galleryEl.innerHTML = '<div class="note" style="padding:12px">No photos yet — capture to fill the gallery.</div>';
+          galleryCount.textContent = '0 images';
+          return;
+        }
+        // sort by createdAt desc
+        items.sort((a, b) => b.createdAt - a.createdAt);
+        galleryCount.textContent = `${items.length} image${items.length > 1 ? 's' : ''}`;
+        items.forEach(item => {
+          const url = URL.createObjectURL(item.blob);
+          const div = document.createElement('div');
+          div.className = 'thumb';
+          div.innerHTML = `
+        <img src="${url}" alt="photo-${item.id}">
+        <div class="meta">${new Date(item.createdAt).toLocaleString()}</div>
+        <div class="actions">
+          <button class="small" data-id="${item.id}" data-action="download">Download</button>
+          <button class="small" data-id="${item.id}" data-action="delete">Delete</button>
+        </div>
+      `;
+          galleryEl.appendChild(div);
+          // cleanup objectURL when removed - we won't track here but browser will reclaim on page unload
+        });
+      }
+
+      // handle gallery actions
+      galleryEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const id = Number(btn.dataset.id);
+        const action = btn.dataset.action;
+        if (action === 'download') {
+          const item = await getPhoto(id);
+          if (!item) return;
+          const url = URL.createObjectURL(item.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } else if (action === 'delete') {
+          if (!confirm('Delete this photo?')) return;
+          await deletePhoto(id);
+        }
+      });
+
+      clearGalleryBtn.addEventListener('click', async () => {
+        if (!confirm('Clear all saved photos from local gallery? This cannot be undone.')) return;
+        await clearGallery();
+      });
+
+      // simple "Download All" - we will trigger download of each image one-by-one (browser will prompt multiple downloads).
+      // Warning: this can produce many downloads. We show a confirm.
+      downloadAllBtn.addEventListener('click', async () => {
+        const items = await listPhotos();
+        if (!items || items.length === 0) { alert('No images to download.'); return; }
+        if (!confirm(`Download ${items.length} images? Your browser may prompt for multiple downloads.`)) return;
+        for (const item of items) {
+          const url = URL.createObjectURL(item.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          // tiny delay to avoid browser blocking (not guaranteed)
+          await new Promise(r => setTimeout(r, 120));
+        }
+      });
+
+      // initial refresh
+      refreshGallery();
+
+      // update UI when page hidden/unhidden
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopPreviewLoop();
+        else if (video && !video.paused) startPreviewLoop();
+      });
+
+      function stopPreviewLoop() {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+
+      // when leaving page stop auto capture and camera to avoid background captures
+      window.addEventListener('beforeunload', () => {
+        stopAutoCapture();
+        if (stream) stream.getTracks().forEach(t => t.stop());
+      });
+
+      // small settings placeholder
+      document.getElementById('openSettings').addEventListener('click', () => {
+        alert('Settings placeholder — you can tune capture quality or storage options here in the future.');
+      });
+
+      // helpful keyboard: space to capture
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.altKey && !e.ctrlKey) {
+          e.preventDefault();
+          captureAndSave().catch(() => { });
+        }
+      });
+
+      // small UX: update value displays on load
+      updateValueDisplays();
+
+      // Accessibility: aria hints
+      document.querySelectorAll('.btn').forEach(b => b.setAttribute('role', 'button'));
+
+    })();
+  </script>
+</body>
+
+</html>
