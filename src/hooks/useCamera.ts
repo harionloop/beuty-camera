@@ -9,6 +9,11 @@ export interface FilterSettings {
   hue: number;
   blur: number;
   scale: number;
+  sepia: number;
+  grayscale: number;
+  invert: number;
+  opacity: number;
+  sharpen: number;
 }
 
 export function useCamera() {
@@ -25,11 +30,28 @@ export function useCamera() {
     hue: 0,
     blur: 0,
     scale: 1,
+    sepia: 0,
+    grayscale: 0,
+    invert: 0,
+    opacity: 1,
+    sharpen: 0,
   });
 
   const getFilterString = useCallback(() => {
-    const { brightness, contrast, saturate, hue, blur } = filters;
-    return `blur(${blur}px) brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) hue-rotate(${hue}deg)`;
+    const { brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity, sharpen } = filters;
+    const filtersArray = [
+      `blur(${blur}px)`,
+      `brightness(${brightness})`,
+      `contrast(${contrast})`,
+      `saturate(${saturate})`,
+      `hue-rotate(${hue}deg)`,
+      `sepia(${sepia}%)`,
+      `grayscale(${grayscale}%)`,
+      `invert(${invert}%)`,
+      `opacity(${opacity})`,
+    ];
+    // Sharpen is applied via a different method (convolution)
+    return filtersArray.join(' ');
   }, [filters]);
 
   const startCamera = useCallback(async () => {
@@ -71,12 +93,17 @@ export function useCamera() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Only set canvas dimensions once when video metadata is loaded, or if they changed
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+    if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+    }
 
     const { scale } = filters;
-    const srcW = video.videoWidth;
-    const srcH = video.videoHeight;
+    const srcW = videoWidth;
+    const srcH = videoHeight;
     const drawW = Math.round(srcW / scale);
     const drawH = Math.round(srcH / scale);
     const sx = Math.max(0, Math.round((srcW - drawW) / 2));
@@ -132,12 +159,30 @@ export function useCamera() {
   useEffect(() => {
     const video = videoRef.current;
     if (video && isActive) {
-      const handlePlay = () => startPreviewLoop();
+      const handleLoadedMetadata = () => {
+        // Start preview loop when video is ready
+        startPreviewLoop();
+      };
+      
+      if (video.readyState >= 2) {
+        // Video already loaded, start immediately
+        startPreviewLoop();
+      } else {
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      }
+      
+      const handlePlay = () => {
+        startPreviewLoop();
+      };
       video.addEventListener('play', handlePlay);
+      
       return () => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
         video.removeEventListener('play', handlePlay);
         stopPreviewLoop();
       };
+    } else {
+      stopPreviewLoop();
     }
   }, [isActive, startPreviewLoop, stopPreviewLoop]);
 

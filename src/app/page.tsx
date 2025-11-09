@@ -7,11 +7,14 @@ import Gallery from '@/components/Gallery';
 import { savePhoto, updatePhoto, PhotoMeta } from '@/lib/indexeddb';
 
 const PRESETS: Record<string, FilterSettings> = {
-  natural: { brightness: 1, contrast: 1, saturate: 1, hue: 0, blur: 0, scale: 1 },
-  smooth: { brightness: 1.05, contrast: 0.98, saturate: 1.06, hue: 0, blur: 1.6, scale: 1.03 },
-  glam: { brightness: 1.08, contrast: 1.12, saturate: 1.2, hue: 6, blur: 0.6, scale: 1.05 },
-  vintage: { brightness: 0.98, contrast: 0.9, saturate: 0.85, hue: 10, blur: 0.1, scale: 1 },
-  'high-contrast': { brightness: 1, contrast: 1.25, saturate: 1.1, hue: 0, blur: 0, scale: 1.02 },
+  natural: { brightness: 1, contrast: 1, saturate: 1, hue: 0, blur: 0, scale: 1, sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0 },
+  smooth: { brightness: 1.05, contrast: 0.98, saturate: 1.06, hue: 0, blur: 1.6, scale: 1.03, sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0 },
+  glam: { brightness: 1.08, contrast: 1.12, saturate: 1.2, hue: 6, blur: 0.6, scale: 1.05, sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0 },
+  vintage: { brightness: 0.98, contrast: 0.9, saturate: 0.85, hue: 10, blur: 0.1, scale: 1, sepia: 35, grayscale: 0, invert: 0, opacity: 1, sharpen: 0 },
+  'high-contrast': { brightness: 1, contrast: 1.25, saturate: 1.1, hue: 0, blur: 0, scale: 1.02, sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0 },
+  noir: { brightness: 0.9, contrast: 1.3, saturate: 0, hue: 0, blur: 0, scale: 1, sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 0 },
+  dreamy: { brightness: 1.1, contrast: 0.95, saturate: 1.15, hue: 0, blur: 1.2, scale: 1, sepia: 0, grayscale: 0, invert: 0, opacity: 0.95, sharpen: 0 },
+  vibrant: { brightness: 1.05, contrast: 1.1, saturate: 1.5, hue: 5, blur: 0, scale: 1, sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0 },
 };
 
 export default function Home() {
@@ -30,7 +33,6 @@ export default function Home() {
 
   const handleCapture = useCallback(async () => {
     try {
-      // capture blob from camera
       const blob = await capture();
       const meta: PhotoMeta = {
         filters: {
@@ -43,11 +45,9 @@ export default function Home() {
         },
       };
 
-      // save locally first
       const id = await savePhoto(blob, meta);
       window.dispatchEvent(new Event('photoAdded'));
 
-      // Immediately upload to Cloudinary
       try {
         const form = new FormData();
         form.append('file', blob, `beautycam_${Date.now()}.jpg`);
@@ -63,14 +63,12 @@ export default function Home() {
           return;
         }
 
-        // If upload succeeded, update the photo record with Cloudinary URL
         if (data?.result) {
           try {
             await updatePhoto(id, {
               cloudinaryUrl: data.result.url,
               cloudinaryPublicId: data.result.publicId,
             });
-            // Refresh gallery to show Cloudinary URL
             window.dispatchEvent(new Event('photoAdded'));
           } catch (e) {
             console.warn('Could not update local photo with Cloudinary metadata', e);
@@ -147,116 +145,114 @@ export default function Home() {
   }, [stopAutoCapture]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 gap-7 bg-gradient-to-br from-[#0f1724] to-[#102236] text-[#e6eef8]">
-      <div className="bg-gradient-to-b from-white/20 to-white/10 rounded-2xl shadow-2xl p-[18px] w-[920px] max-w-[calc(100%-48px)] grid grid-cols-[1fr_420px] gap-4 border border-white/35">
-        {/* Left: Camera Section */}
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-2.5 items-center">
-            <h2 className="m-0 text-xl font-semibold">BeautyCam</h2>
-            <div className="ml-auto text-xs text-white/60">Local-only · Camera required</div>
-          </div>
+    <div className="h-screen w-screen flex bg-gradient-to-br from-[#0f1724] to-[#102236] text-[#e6eef8] overflow-hidden">
+      {/* Left Section - 70% - Camera & Filters */}
+      <div className="w-[70%] flex flex-col p-6 gap-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#7c5cff] to-[#5ad7ff] bg-clip-text text-transparent">
+            BeautyCam
+          </h1>
+          <div className="text-xs text-white/60">Local-only · Camera required</div>
+        </div>
 
-          <div className="relative rounded-xl overflow-hidden bg-gradient-to-b from-[#0a0c14]/60 to-[#0a0c14]/40 min-h-[360px] flex items-center justify-center">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className={`w-full h-full object-cover block ${isActive ? 'hidden' : ''}`}
-            />
-            <canvas
-              ref={canvasRef}
-              className="preview absolute inset-0 w-full h-full object-cover block scale-x-[-1]"
-              style={{ display: isActive ? 'block' : 'none' }}
-            />
-            {!isActive && (
-              <div className="absolute text-white/50 text-center p-5">
-                <div className="text-xl mb-2">Camera not started</div>
-                <div className="text-xs text-white/60">
+        {/* Camera Viewer - Takes most of the space */}
+        <div className="flex-1 relative rounded-xl overflow-hidden bg-gradient-to-b from-[#0a0c14]/60 to-[#0a0c14]/40 border border-white/20 shadow-2xl min-h-0">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className={`absolute inset-0 w-full h-full object-cover ${isActive ? 'hidden' : ''}`}
+          />
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
+            style={{ display: isActive ? 'block' : 'none' }}
+          />
+          {!isActive && (
+            <div className="absolute inset-0 flex items-center justify-center text-white/50 text-center p-5">
+              <div>
+                <div className="text-2xl mb-2">📷 Camera not started</div>
+                <div className="text-sm text-white/60">
                   Grant camera permission and click <strong>Start Camera</strong>
                 </div>
               </div>
-            )}
-          </div>
-
-          <div className="flex gap-3 flex-wrap items-center mt-2">
-            <button
-              onClick={handleStartCamera}
-              disabled={isActive}
-              className="px-3.5 py-2.5 rounded-[10px] cursor-pointer font-semibold bg-gradient-to-r from-[#7c5cff] to-[#5ad7ff] text-[#06101a] border-none shadow-lg shadow-[#7c5cff]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
-            >
-              Start Camera
-            </button>
-            <button
-              onClick={stopCamera}
-              disabled={!isActive}
-              className="px-3.5 py-2.5 rounded-[10px] cursor-pointer font-semibold bg-gradient-to-r from-white/30 to-white/10 text-white/70 border border-white/40 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 transition-colors"
-            >
-              Stop Camera
-            </button>
-            <button
-              onClick={handleCapture}
-              disabled={!isActive}
-              className="px-3.5 py-2.5 rounded-[10px] cursor-pointer font-semibold bg-gradient-to-r from-[#7c5cff] to-[#5ad7ff] text-[#06101a] border-none shadow-lg shadow-[#7c5cff]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
-            >
-              Capture
-            </button>
-
-            <label className="flex gap-2 items-center ml-auto">
-              <input
-                type="checkbox"
-                checked={autoEnabled}
-                onChange={(e) => setAutoEnabled(e.target.checked)}
-                className="cursor-pointer"
-              />
-              <span className="text-xs">Enable Auto-Capture</span>
-            </label>
-
-            <button
-              onClick={autoCapture ? stopAutoCapture : startAutoCapture}
-              disabled={!autoEnabled}
-              className={`px-3.5 py-2.5 rounded-[10px] cursor-pointer font-semibold text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-                autoCapture
-                  ? 'bg-gradient-to-r from-[#ff7b7b] to-[#ffb47b] text-[#211]'
-                  : 'bg-gradient-to-r from-white/30 to-white/10 text-white/70 border border-white/40 hover:bg-white/20'
-              }`}
-            >
-              {autoCapture ? 'Stop Auto' : 'Start Auto'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-xs text-white/70 mb-1.5">Presets</div>
-              <div className="flex gap-2 flex-wrap">
-                {Object.keys(PRESETS).map((key) => (
-                  <div
-                    key={key}
-                    onClick={() => handlePreset(key)}
-                    className="bg-white/40 backdrop-blur-sm px-2.5 py-2 rounded-[10px] cursor-pointer border border-white/30 text-xs hover:bg-white/50 transition-colors"
-                  >
-                    {key === 'high-contrast' ? 'High Contrast' : key.charAt(0).toUpperCase() + key.slice(1)}
-                  </div>
-                ))}
-              </div>
             </div>
+          )}
+        </div>
 
-            <div className="text-right">
-              <div className="text-xs text-white/60">
-                Auto-capture interval: <strong>3 seconds</strong>
-              </div>
-              <div className="text-xs text-white/60">
-                Images saved locally in browser (IndexedDB)
-              </div>
-            </div>
+        {/* Controls */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <button
+            onClick={handleStartCamera}
+            disabled={isActive}
+            className="px-4 py-2.5 rounded-lg font-semibold bg-gradient-to-r from-[#7c5cff] to-[#5ad7ff] text-[#06101a] border-none shadow-lg shadow-[#7c5cff]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+          >
+            Start Camera
+          </button>
+          <button
+            onClick={stopCamera}
+            disabled={!isActive}
+            className="px-4 py-2.5 rounded-lg font-semibold bg-white/10 text-white/70 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 transition-colors"
+          >
+            Stop Camera
+          </button>
+          <button
+            onClick={handleCapture}
+            disabled={!isActive}
+            className="px-4 py-2.5 rounded-lg font-semibold bg-gradient-to-r from-[#7c5cff] to-[#5ad7ff] text-[#06101a] border-none shadow-lg shadow-[#7c5cff]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+          >
+            📸 Capture
+          </button>
+
+          <label className="flex gap-2 items-center ml-auto">
+            <input
+              type="checkbox"
+              checked={autoEnabled}
+              onChange={(e) => setAutoEnabled(e.target.checked)}
+              className="cursor-pointer"
+            />
+            <span className="text-xs">Auto-Capture</span>
+          </label>
+
+          <button
+            onClick={autoCapture ? stopAutoCapture : startAutoCapture}
+            disabled={!autoEnabled}
+            className={`px-4 py-2.5 rounded-lg font-semibold text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+              autoCapture
+                ? 'bg-gradient-to-r from-[#ff7b7b] to-[#ffb47b] text-[#211]'
+                : 'bg-white/10 text-white/70 border border-white/30 hover:bg-white/20'
+            }`}
+          >
+            {autoCapture ? '⏹ Stop Auto' : '▶ Start Auto'}
+          </button>
+        </div>
+
+        {/* Presets */}
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-semibold text-white/80">Presets:</div>
+          <div className="flex gap-2 flex-wrap">
+            {Object.keys(PRESETS).map((key) => (
+              <button
+                key={key}
+                onClick={() => handlePreset(key)}
+                className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-xs hover:bg-white/20 hover:border-white/30 transition-colors capitalize"
+              >
+                {key === 'high-contrast' ? 'High Contrast' : key}
+              </button>
+            ))}
           </div>
+        </div>
 
+        {/* Filters Section - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           <FilterSliders filters={filters} onFilterChange={setFilters} />
         </div>
+      </div>
 
-        {/* Right: Gallery Section */}
-        <div className="flex flex-col gap-3">
-          <Gallery />
-        </div>
+      {/* Right Section - 30% - Gallery */}
+      <div className="w-[30%] border-l border-white/20 bg-gradient-to-b from-white/5 to-transparent p-4 overflow-hidden flex flex-col">
+        <Gallery />
       </div>
     </div>
   );

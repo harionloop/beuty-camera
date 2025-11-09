@@ -105,25 +105,25 @@ export default function Gallery() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 h-full flex-1 min-h-0">
       <div className="flex items-center justify-between">
         <div>
-          <div className="font-bold">Gallery</div>
+          <div className="font-bold text-lg">Gallery</div>
           <div className="text-xs text-white/70">{photos.length} image{photos.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="flex gap-2 items-center">
           <button
             onClick={handleDownloadAll}
-            className="px-2 py-1.5 text-xs rounded-lg bg-white/6 border border-white/30 hover:bg-white/10 transition-colors"
+            className="px-2 py-1.5 text-xs rounded-lg bg-white/10 border border-white/30 hover:bg-white/20 transition-colors"
           >
             Download All
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 overflow-auto max-h-[480px] p-1.5">
+      <div className="grid grid-cols-1 gap-3 overflow-y-auto flex-1 min-h-0 p-1 custom-scrollbar">
         {photos.length === 0 ? (
-          <div className="col-span-2 text-xs text-white/60 p-3">
+          <div className="text-xs text-white/60 p-6 text-center">
             No photos yet — capture to fill the gallery.
           </div>
         ) : (
@@ -131,27 +131,27 @@ export default function Gallery() {
             // Use Cloudinary URL if available, otherwise use local blob URL
             const imageUrl = item.cloudinaryUrl || URL.createObjectURL(item.blob);
             return (
-              <div key={item.id} className="relative rounded-[10px] overflow-hidden border border-white/30">
+              <div key={item.id} className="relative rounded-lg overflow-hidden border border-white/20 hover:border-white/40 transition-colors group">
                 <img
                   src={imageUrl}
                   alt={`photo-${item.id}`}
-                  className="w-full h-[120px] object-cover block"
+                  className="w-full h-48 object-cover block"
                 />
-                <div className="absolute left-2 bottom-2 bg-black/35 backdrop-blur-sm p-1.5 rounded-lg text-xs">
+                <div className="absolute left-2 bottom-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-xs">
                   {new Date(item.createdAt).toLocaleString()}
                 </div>
-                <div className="absolute right-2 top-2 flex gap-1.5">
+                <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleDownload(item.id)}
-                    className="px-2 py-1 text-xs rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 transition-colors"
+                    className="px-2 py-1 text-xs rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-colors"
                   >
-                    Download
+                    ⬇
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="px-2 py-1 text-xs rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 transition-colors"
+                    className="px-2 py-1 text-xs rounded-lg bg-red-500/80 backdrop-blur-sm border border-red-400/30 hover:bg-red-500 transition-colors"
                   >
-                    Delete
+                    🗑
                   </button>
                 </div>
               </div>
@@ -160,23 +160,17 @@ export default function Gallery() {
         )}
       </div>
 
-      <div className="flex gap-2 items-center justify-between">
+      <div className="flex gap-2 items-center justify-between pt-2 border-t border-white/10">
         <div className="text-xs text-white/60">
-          Stored locally — clear when done to remove images.
+          Stored locally
         </div>
-        <div className="text-right">
-          <button
-            onClick={handleClear}
-            className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-[#ff7b7b] to-[#ffb47b] text-[#211] hover:opacity-90 transition-opacity"
-          >
-            Clear Gallery
-          </button>
-        </div>
+        <button
+          onClick={handleClear}
+          className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-[#ff7b7b] to-[#ffb47b] text-[#211] hover:opacity-90 transition-opacity"
+        >
+          Clear All
+        </button>
       </div>
-
-      <footer className="text-xs text-white/60 mt-2 text-center">
-        Tip: use the sliders to fine-tune the look. 'Smooth' uses a gentle blur to simulate skin smoothing.
-      </footer>
     </div>
   );
 }
