@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCamera, FilterSettings } from '@/hooks/useCamera';
 import FilterSliders from '@/components/FilterSliders';
 import Gallery from '@/components/Gallery';
-import { savePhoto, PhotoMeta } from '@/lib/indexeddb';
+import { savePhoto, updatePhoto, PhotoMeta } from '@/lib/indexeddb';
 
 const PRESETS: Record<string, FilterSettings> = {
   natural: { brightness: 1, contrast: 1, saturate: 1, hue: 0, blur: 0, scale: 1 },
@@ -23,13 +23,14 @@ export default function Home() {
   const handleStartCamera = async () => {
     try {
       await startCamera();
-    } catch (err) {
+    } catch {
       alert('Unable to access camera. Please allow camera permissions or use a compatible device.');
     }
   };
 
-  const handleCapture = async () => {
+  const handleCapture = useCallback(async () => {
     try {
+      // capture blob from camera
       const blob = await capture();
       const meta: PhotoMeta = {
         filters: {
@@ -41,13 +42,48 @@ export default function Home() {
           scale: filters.scale.toString(),
         },
       };
-      await savePhoto(blob, meta);
+
+      // save locally first
+      const id = await savePhoto(blob, meta);
       window.dispatchEvent(new Event('photoAdded'));
+
+      // Immediately upload to Cloudinary
+      try {
+        const form = new FormData();
+        form.append('file', blob, `beautycam_${Date.now()}.jpg`);
+
+        const resp = await fetch('/api/upload', {
+          method: 'POST',
+          body: form,
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) {
+          console.error('Cloudinary upload failed', data);
+          return;
+        }
+
+        // If upload succeeded, update the photo record with Cloudinary URL
+        if (data?.result) {
+          try {
+            await updatePhoto(id, {
+              cloudinaryUrl: data.result.url,
+              cloudinaryPublicId: data.result.publicId,
+            });
+            // Refresh gallery to show Cloudinary URL
+            window.dispatchEvent(new Event('photoAdded'));
+          } catch (e) {
+            console.warn('Could not update local photo with Cloudinary metadata', e);
+          }
+        }
+      } catch (uploadErr) {
+        console.error('Cloudinary upload failed', uploadErr);
+      }
     } catch (err) {
       console.error('Capture failed', err);
       alert('Failed to capture photo. Make sure the camera is active.');
     }
-  };
+  }, [capture, filters]);
 
   const handlePreset = (presetKey: string) => {
     const preset = PRESETS[presetKey];
@@ -56,32 +92,41 @@ export default function Home() {
     }
   };
 
-  const startAutoCapture = () => {
+  const startAutoCapture = useCallback(() => {
     if (!autoEnabled) {
       alert('Please check "Enable Auto-Capture" first.');
       return;
     }
-    if (autoInterval) return;
-    handleCapture();
-    const interval = setInterval(() => {
+    setAutoInterval((prev) => {
+      if (prev) return prev;
       handleCapture();
-    }, 3000);
-    setAutoInterval(interval);
-    setAutoCapture(true);
-  };
+      const interval = setInterval(() => {
+        handleCapture();
+      }, 3000);
+      setAutoCapture(true);
+      return interval;
+    });
+  }, [autoEnabled, handleCapture]);
 
-  const stopAutoCapture = () => {
-    if (autoInterval) {
-      clearInterval(autoInterval);
-      setAutoInterval(null);
-    }
+  const stopAutoCapture = useCallback(() => {
+    setAutoInterval((prev) => {
+      if (prev) {
+        clearInterval(prev);
+      }
+      return null;
+    });
     setAutoCapture(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (!autoEnabled) {
-      stopAutoCapture();
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        setAutoInterval(null);
+        setAutoCapture(false);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoEnabled]);
 
   useEffect(() => {
@@ -93,13 +138,13 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [filters]);
+  }, [handleCapture]);
 
   useEffect(() => {
     return () => {
       stopAutoCapture();
     };
-  }, []);
+  }, [stopAutoCapture]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8 gap-7 bg-gradient-to-br from-[#0f1724] to-[#102236] text-[#e6eef8]">
@@ -183,7 +228,7 @@ export default function Home() {
             <div>
               <div className="text-xs text-white/70 mb-1.5">Presets</div>
               <div className="flex gap-2 flex-wrap">
-                {Object.entries(PRESETS).map(([key, _]) => (
+                {Object.keys(PRESETS).map((key) => (
                   <div
                     key={key}
                     onClick={() => handlePreset(key)}

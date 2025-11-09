@@ -45,14 +45,26 @@ export default function Gallery() {
     try {
       const item = await getPhoto(id);
       if (!item) return;
-      const url = URL.createObjectURL(item.blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      
+      // If Cloudinary URL exists, download from there, otherwise use local blob
+      if (item.cloudinaryUrl) {
+        const a = document.createElement('a');
+        a.href = item.cloudinaryUrl;
+        a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        const url = URL.createObjectURL(item.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
     } catch (err) {
       console.error('Failed to download photo', err);
     }
@@ -116,11 +128,12 @@ export default function Gallery() {
           </div>
         ) : (
           photos.map((item) => {
-            const url = URL.createObjectURL(item.blob);
+            // Use Cloudinary URL if available, otherwise use local blob URL
+            const imageUrl = item.cloudinaryUrl || URL.createObjectURL(item.blob);
             return (
               <div key={item.id} className="relative rounded-[10px] overflow-hidden border border-white/30">
                 <img
-                  src={url}
+                  src={imageUrl}
                   alt={`photo-${item.id}`}
                   className="w-full h-[120px] object-cover block"
                 />

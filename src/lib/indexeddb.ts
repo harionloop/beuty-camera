@@ -17,6 +17,8 @@ export interface PhotoItem {
   blob: Blob;
   createdAt: number;
   meta: PhotoMeta;
+  cloudinaryUrl?: string;
+  cloudinaryPublicId?: string;
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -118,6 +120,45 @@ export async function clearGallery(): Promise<void> {
     };
     req.onerror = () => {
       rej(req.error);
+      db.close();
+    };
+  });
+}
+
+export async function updatePhoto(
+  id: number,
+  updates: { cloudinaryUrl?: string; cloudinaryPublicId?: string; meta?: PhotoMeta }
+): Promise<void> {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    const store = tx.objectStore(DB_STORE);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const item = getReq.result;
+      if (!item) {
+        db.close();
+        rej(new Error('Photo not found'));
+        return;
+      }
+      const updatedItem = {
+        ...item,
+        ...(updates.cloudinaryUrl && { cloudinaryUrl: updates.cloudinaryUrl }),
+        ...(updates.cloudinaryPublicId && { cloudinaryPublicId: updates.cloudinaryPublicId }),
+        ...(updates.meta && { meta: updates.meta }),
+      };
+      const putReq = store.put(updatedItem);
+      putReq.onsuccess = () => {
+        res();
+        db.close();
+      };
+      putReq.onerror = () => {
+        rej(putReq.error);
+        db.close();
+      };
+    };
+    getReq.onerror = () => {
+      rej(getReq.error);
       db.close();
     };
   });
