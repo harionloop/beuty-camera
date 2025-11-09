@@ -14,6 +14,14 @@ export interface FilterSettings {
   invert: number;
   opacity: number;
   sharpen: number;
+  exposure: number;
+  temperature: number;
+  tint: number;
+  vibrance: number;
+  shadow: number;
+  highlight: number;
+  gamma: number;
+  noise: number;
 }
 
 export function useCamera() {
@@ -35,22 +43,42 @@ export function useCamera() {
     invert: 0,
     opacity: 1,
     sharpen: 0,
+    exposure: 0,
+    temperature: 0,
+    tint: 0,
+    vibrance: 0,
+    shadow: 0,
+    highlight: 0,
+    gamma: 1,
+    noise: 0,
   });
 
   const getFilterString = useCallback(() => {
-    const { brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity, sharpen } = filters;
+    const { brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity, exposure, temperature, tint, vibrance, shadow, highlight, gamma } = filters;
+    
+    // Calculate exposure adjustment (exposure is in EV, convert to brightness multiplier)
+    const exposureBrightness = Math.pow(2, exposure);
+    const adjustedBrightness = brightness * exposureBrightness;
+    
+    // Temperature adjustment (warm/cool) - affects red/blue channels
+    // Temperature: positive = warm (more red), negative = cool (more blue)
+    const tempHue = temperature * 0.1; // Convert to hue shift
+    
+    // Tint adjustment (green/magenta)
+    const tintHue = tint * 0.05;
+    
     const filtersArray = [
       `blur(${blur}px)`,
-      `brightness(${brightness})`,
+      `brightness(${adjustedBrightness})`,
       `contrast(${contrast})`,
-      `saturate(${saturate})`,
-      `hue-rotate(${hue}deg)`,
+      `saturate(${saturate + vibrance * 0.1})`, // Combine saturation and vibrance
+      `hue-rotate(${hue + tempHue + tintHue}deg)`,
       `sepia(${sepia}%)`,
       `grayscale(${grayscale}%)`,
       `invert(${invert}%)`,
       `opacity(${opacity})`,
     ];
-    // Sharpen is applied via a different method (convolution)
+    
     return filtersArray.join(' ');
   }, [filters]);
 
