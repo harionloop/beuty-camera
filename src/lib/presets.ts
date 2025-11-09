@@ -36,6 +36,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         sepia: 5, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
         exposure: 0.2, temperature: 45, tint: 25, vibrance: 22, shadow: 3, highlight: 18, gamma: 1.12, noise: 0
       },
+      'warm-honey': {
+        brightness: 1.1, contrast: 1.08, saturate: 1.2, hue: 22, blur: 0, scale: 1,
+        sepia: 12, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.22, temperature: 38, tint: 18, vibrance: 28, shadow: 8, highlight: 12, gamma: 1.09, noise: 0
+      },
+      'warm-desert': {
+        brightness: 1.12, contrast: 1.15, saturate: 1.25, hue: 18, blur: 0.1, scale: 1,
+        sepia: 20, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.28, temperature: 42, tint: 22, vibrance: 30, shadow: 12, highlight: 25, gamma: 1.15, noise: 0
+      },
+      'warm-candlelight': {
+        brightness: 1.02, contrast: 1.04, saturate: 1.1, hue: 12, blur: 0.5, scale: 1,
+        sepia: 25, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.1, temperature: 28, tint: 12, vibrance: 18, shadow: 15, highlight: 8, gamma: 1.02, noise: 0
+      },
+      'warm-autumn': {
+        brightness: 1.09, contrast: 1.1, saturate: 1.35, hue: 28, blur: 0, scale: 1,
+        sepia: 18, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.26, temperature: 36, tint: 24, vibrance: 32, shadow: 6, highlight: 22, gamma: 1.11, noise: 0
+      },
+      'warm-glow': {
+        brightness: 1.15, contrast: 1.05, saturate: 1.1, hue: 8, blur: 0.8, scale: 1,
+        sepia: 5, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.3, temperature: 20, tint: 5, vibrance: 15, shadow: -5, highlight: 30, gamma: 1.0, noise: 0
+      },
     }
   },
   {
@@ -66,6 +91,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         brightness: 1.04, contrast: 1.09, saturate: 1.12, hue: 210, blur: 0, scale: 1,
         sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
         exposure: 0.13, temperature: -28, tint: -18, vibrance: 18, shadow: 6, highlight: -6, gamma: 1.07, noise: 0
+      },
+      'cool-winter': {
+        brightness: 1.08, contrast: 1.12, saturate: 0.9, hue: 205, blur: 0, scale: 1,
+        sepia: 0, grayscale: 10, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.2, temperature: -40, tint: -14, vibrance: 5, shadow: 18, highlight: -12, gamma: 1.1, noise: 0
+      },
+      'cool-shadows': {
+        brightness: 0.98, contrast: 1.15, saturate: 1.0, hue: 215, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.05, temperature: -32, tint: -20, vibrance: 10, shadow: 25, highlight: -15, gamma: 1.12, noise: 0
+      },
+      'cool-iceberg': {
+        brightness: 1.1, contrast: 1.05, saturate: 0.85, hue: 195, blur: 0.1, scale: 1,
+        sepia: 0, grayscale: 15, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.25, temperature: -45, tint: -10, vibrance: 2, shadow: 10, highlight: -5, gamma: 1.06, noise: 1
+      },
+      'cool-moonlight': {
+        brightness: 0.95, contrast: 1.1, saturate: 0.95, hue: 220, blur: 0.3, scale: 1,
+        sepia: 0, grayscale: 5, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.0, temperature: -38, tint: -22, vibrance: 8, shadow: 20, highlight: -18, gamma: 1.09, noise: 0
+      },
+      'cool-denim': {
+        brightness: 1.0, contrast: 1.08, saturate: 1.15, hue: 208, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.08, temperature: -26, tint: -16, vibrance: 16, shadow: 14, highlight: -9, gamma: 1.07, noise: 0
       },
     }
   },
@@ -98,6 +148,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 4,
         exposure: 0.18, temperature: 12, tint: 4, vibrance: 28, shadow: 5, highlight: 12, gamma: 1.06, noise: 0
       },
+      'food-sweet': {
+        brightness: 1.15, contrast: 1.1, saturate: 1.5, hue: 12, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 2,
+        exposure: 0.28, temperature: 16, tint: 7, vibrance: 45, shadow: -8, highlight: 28, gamma: 1.02, noise: 0
+      },
+      'food-savory': {
+        brightness: 1.08, contrast: 1.22, saturate: 1.35, hue: 8, blur: 0, scale: 1,
+        sepia: 8, grayscale: 0, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.18, temperature: 22, tint: 10, vibrance: 32, shadow: 12, highlight: 18, gamma: 1.12, noise: 0
+      },
+      'food-healthy': {
+        brightness: 1.1, contrast: 1.08, saturate: 1.4, hue: -2, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 1,
+        exposure: 0.22, temperature: 8, tint: 2, vibrance: 42, shadow: -12, highlight: 22, gamma: 0.99, noise: 0
+      },
+      'food-bbq': {
+        brightness: 1.06, contrast: 1.25, saturate: 1.4, hue: 15, blur: 0, scale: 1,
+        sepia: 10, grayscale: 0, invert: 0, opacity: 1, sharpen: 12,
+        exposure: 0.16, temperature: 25, tint: 12, vibrance: 35, shadow: 15, highlight: 20, gamma: 1.15, noise: 0
+      },
+      'food-spicy': {
+        brightness: 1.12, contrast: 1.18, saturate: 1.55, hue: 10, blur: 0, scale: 1,
+        sepia: 5, grayscale: 0, invert: 0, opacity: 1, sharpen: 8,
+        exposure: 0.24, temperature: 20, tint: 9, vibrance: 48, shadow: 0, highlight: 25, gamma: 1.1, noise: 0
+      },
     }
   },
   {
@@ -128,6 +203,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         brightness: 1.08, contrast: 1.15, saturate: 1.5, hue: 10, blur: 0, scale: 1,
         sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 5,
         exposure: 0.2, temperature: 12, tint: 8, vibrance: 40, shadow: 0, highlight: 15, gamma: 1.05, noise: 0
+      },
+      'street-concrete': {
+        brightness: 0.92, contrast: 1.28, saturate: 1.0, hue: -5, blur: 0, scale: 1,
+        sepia: 0, grayscale: 5, invert: 0, opacity: 1, sharpen: 15,
+        exposure: -0.12, temperature: -12, tint: 2, vibrance: 2, shadow: 30, highlight: -25, gamma: 1.18, noise: 1
+      },
+      'street-alley': {
+        brightness: 0.85, contrast: 1.32, saturate: 1.05, hue: 0, blur: 0.1, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 18,
+        exposure: -0.25, temperature: -8, tint: 6, vibrance: 8, shadow: 45, highlight: -38, gamma: 1.22, noise: 2
+      },
+      'street-neon': {
+        brightness: 1.0, contrast: 1.22, saturate: 1.6, hue: 15, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.05, temperature: 5, tint: 10, vibrance: 50, shadow: 15, highlight: 10, gamma: 1.12, noise: 0
+      },
+      'street-dusk': {
+        brightness: 0.9, contrast: 1.2, saturate: 1.2, hue: 20, blur: 0, scale: 1,
+        sepia: 10, grayscale: 0, invert: 0, opacity: 1, sharpen: 5,
+        exposure: -0.18, temperature: 15, tint: 15, vibrance: 20, shadow: 28, highlight: -22, gamma: 1.16, noise: 0
+      },
+      'street-daylight': {
+        brightness: 1.1, contrast: 1.18, saturate: 1.3, hue: -3, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 6,
+        exposure: 0.22, temperature: -5, tint: 0, vibrance: 25, shadow: 5, highlight: 20, gamma: 1.08, noise: 0
       },
     }
   },
@@ -160,6 +260,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 5,
         exposure: -0.1, temperature: 5, tint: 0, vibrance: 15, shadow: 30, highlight: -25, gamma: 1.2, noise: 0
       },
+      'portrait-crisp': {
+        brightness: 1.03, contrast: 1.1, saturate: 1.1, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.12, temperature: 0, tint: 1, vibrance: 12, shadow: 10, highlight: -8, gamma: 1.05, noise: 0
+      },
+      'portrait-warm': {
+        brightness: 1.06, contrast: 1.08, saturate: 1.15, hue: 8, blur: 0.2, scale: 1,
+        sepia: 5, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.15, temperature: 15, tint: 8, vibrance: 18, shadow: 5, highlight: 5, gamma: 1.08, noise: 0
+      },
+      'portrait-cool': {
+        brightness: 1.04, contrast: 1.06, saturate: 1.05, hue: -5, blur: 0.2, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.1, temperature: -10, tint: -5, vibrance: 10, shadow: 12, highlight: -10, gamma: 1.04, noise: 0
+      },
+      'portrait-b&w': {
+        brightness: 1.1, contrast: 1.3, saturate: 0, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 5,
+        exposure: 0.15, temperature: 0, tint: 0, vibrance: 0, shadow: 15, highlight: -12, gamma: 1.2, noise: 1
+      },
+      'portrait-vintage': {
+        brightness: 1.0, contrast: 1.05, saturate: 0.9, hue: 15, blur: 0.5, scale: 1,
+        sepia: 20, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.05, temperature: 12, tint: -5, vibrance: -5, shadow: 18, highlight: -15, gamma: 1.0, noise: 2
+      },
     }
   },
   {
@@ -190,6 +315,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         brightness: 1.05, contrast: 0.95, saturate: 0.9, hue: 0, blur: 1.2, scale: 1,
         sepia: 0, grayscale: 5, invert: 0, opacity: 0.98, sharpen: 0,
         exposure: 0.15, temperature: 5, tint: 3, vibrance: 5, shadow: -10, highlight: 15, gamma: 0.92, noise: 0
+      },
+      'nature-earthy': {
+        brightness: 1.02, contrast: 1.18, saturate: 1.25, hue: 25, blur: 0, scale: 1,
+        sepia: 15, grayscale: 0, invert: 0, opacity: 1, sharpen: 6,
+        exposure: 0.1, temperature: 22, tint: 12, vibrance: 28, shadow: 15, highlight: 10, gamma: 1.12, noise: 0
+      },
+      'nature-green': {
+        brightness: 1.08, contrast: 1.12, saturate: 1.6, hue: 110, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 4,
+        exposure: 0.18, temperature: -5, tint: -8, vibrance: 50, shadow: 5, highlight: 18, gamma: 1.06, noise: 0
+      },
+      'nature-autumn': {
+        brightness: 1.1, contrast: 1.15, saturate: 1.4, hue: 30, blur: 0, scale: 1,
+        sepia: 10, grayscale: 0, invert: 0, opacity: 1, sharpen: 2,
+        exposure: 0.22, temperature: 25, tint: 15, vibrance: 40, shadow: 8, highlight: 20, gamma: 1.1, noise: 0
+      },
+      'nature-flowers': {
+        brightness: 1.12, contrast: 1.1, saturate: 1.7, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 1,
+        exposure: 0.25, temperature: 10, tint: 5, vibrance: 55, shadow: -5, highlight: 25, gamma: 1.0, noise: 0
+      },
+      'nature-sky': {
+        brightness: 1.05, contrast: 1.1, saturate: 1.3, hue: 200, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.15, temperature: -15, tint: -10, vibrance: 30, shadow: 10, highlight: 5, gamma: 1.08, noise: 0
       },
     }
   },
@@ -222,6 +372,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         sepia: 40, grayscale: 5, invert: 0, opacity: 1, sharpen: 0,
         exposure: -0.15, temperature: 22, tint: -8, vibrance: -20, shadow: 18, highlight: -20, gamma: 0.88, noise: 6
       },
+      'vintage-sepia': {
+        brightness: 1.0, contrast: 0.95, saturate: 0.9, hue: 20, blur: 0, scale: 1,
+        sepia: 50, grayscale: 0, invert: 0, opacity: 1, sharpen: 2,
+        exposure: 0.0, temperature: 10, tint: -2, vibrance: -8, shadow: 8, highlight: -10, gamma: 0.92, noise: 4
+      },
+      'vintage-faded': {
+        brightness: 1.1, contrast: 0.9, saturate: 0.8, hue: 0, blur: 0.6, scale: 1,
+        sepia: 10, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.2, temperature: 5, tint: 0, vibrance: -12, shadow: -10, highlight: 20, gamma: 0.85, noise: 3
+      },
+      'vintage-grainy': {
+        brightness: 0.96, contrast: 1.05, saturate: 0.8, hue: 10, blur: 0, scale: 1,
+        sepia: 30, grayscale: 0, invert: 0, opacity: 1, sharpen: 5,
+        exposure: -0.08, temperature: 15, tint: -6, vibrance: -15, shadow: 15, highlight: -18, gamma: 0.98, noise: 8
+      },
+      'vintage-lomo': {
+        brightness: 1.1, contrast: 1.2, saturate: 1.3, hue: 25, blur: 0, scale: 1,
+        sepia: 15, grayscale: 0, invert: 0, opacity: 1, sharpen: 8,
+        exposure: 0.15, temperature: 20, tint: 10, vibrance: 25, shadow: 20, highlight: 15, gamma: 1.15, noise: 2
+      },
+      'vintage-nostalgia': {
+        brightness: 1.05, contrast: 1.0, saturate: 0.85, hue: 8, blur: 0.8, scale: 1,
+        sepia: 22, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.12, temperature: 18, tint: -4, vibrance: -18, shadow: 10, highlight: -12, gamma: 0.9, noise: 5
+      },
     }
   },
   {
@@ -252,6 +427,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         brightness: 1.0, contrast: 1.25, saturate: 1.3, hue: 5, blur: 0.1, scale: 1,
         sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 8,
         exposure: 0, temperature: 8, tint: 3, vibrance: 20, shadow: 20, highlight: -15, gamma: 1.18, noise: 0
+      },
+      'cinematic-teal-orange': {
+        brightness: 1.0, contrast: 1.1, saturate: 1.2, hue: 195, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 6,
+        exposure: 0.05, temperature: -20, tint: 20, vibrance: 22, shadow: 15, highlight: -10, gamma: 1.1, noise: 0
+      },
+      'cinematic-blockbuster': {
+        brightness: 0.98, contrast: 1.28, saturate: 1.15, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 15,
+        exposure: -0.08, temperature: -8, tint: 8, vibrance: 15, shadow: 30, highlight: -28, gamma: 1.2, noise: 1
+      },
+      'cinematic-indie': {
+        brightness: 1.02, contrast: 1.12, saturate: 1.05, hue: 10, blur: 0.3, scale: 1,
+        sepia: 8, grayscale: 0, invert: 0, opacity: 1, sharpen: 3,
+        exposure: 0.08, temperature: 12, tint: -5, vibrance: 10, shadow: 18, highlight: -14, gamma: 1.08, noise: 2
+      },
+      'cinematic-western': {
+        brightness: 1.05, contrast: 1.18, saturate: 1.1, hue: 25, blur: 0, scale: 1,
+        sepia: 25, grayscale: 0, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.1, temperature: 25, tint: 5, vibrance: 12, shadow: 22, highlight: -18, gamma: 1.15, noise: 1
+      },
+      'cinematic-sci-fi': {
+        brightness: 0.96, contrast: 1.22, saturate: 1.1, hue: 210, blur: 0, scale: 1,
+        sepia: 0, grayscale: 5, invert: 0, opacity: 1, sharpen: 12,
+        exposure: -0.1, temperature: -25, tint: -15, vibrance: 18, shadow: 28, highlight: -24, gamma: 1.18, noise: 0
       },
     }
   },
@@ -284,6 +484,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 8,
         exposure: 0.22, temperature: 15, tint: 12, vibrance: 50, shadow: 5, highlight: 20, gamma: 1.12, noise: 0
       },
+      'artistic-watercolor': {
+        brightness: 1.12, contrast: 0.95, saturate: 1.2, hue: 0, blur: 2.0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 0,
+        exposure: 0.3, temperature: 8, tint: 6, vibrance: 20, shadow: -15, highlight: 22, gamma: 0.9, noise: 0
+      },
+      'artistic-sketch': {
+        brightness: 1.2, contrast: 1.5, saturate: 0, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 100, invert: 100, opacity: 1, sharpen: 25,
+        exposure: 0.25, temperature: 0, tint: 0, vibrance: 0, shadow: 50, highlight: -50, gamma: 1.5, noise: 5
+      },
+      'artistic-glitch': {
+        brightness: 1.0, contrast: 1.1, saturate: 1.5, hue: 300, blur: 0, scale: 1.02,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.0, temperature: -10, tint: 25, vibrance: 40, shadow: 10, highlight: 5, gamma: 1.1, noise: 10
+      },
+      'artistic-duotone': {
+        brightness: 1.0, contrast: 1.2, saturate: 1.3, hue: 330, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 8,
+        exposure: 0.0, temperature: 0, tint: 0, vibrance: 30, shadow: 25, highlight: -20, gamma: 1.2, noise: 0
+      },
+      'artistic-infrared': {
+        brightness: 1.1, contrast: 1.25, saturate: 1.6, hue: 270, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 12,
+        exposure: 0.15, temperature: -25, tint: 15, vibrance: 45, shadow: 15, highlight: 10, gamma: 1.2, noise: 1
+      },
     }
   },
   {
@@ -314,6 +539,31 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         brightness: 0.85, contrast: 1.5, saturate: 0, hue: 0, blur: 0, scale: 1,
         sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 20,
         exposure: -0.3, temperature: 0, tint: 0, vibrance: 0, shadow: 50, highlight: -45, gamma: 1.4, noise: 1
+      },
+      'bw-matte': {
+        brightness: 1.0, contrast: 1.1, saturate: 0, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 5,
+        exposure: 0.0, temperature: 0, tint: 0, vibrance: 0, shadow: -10, highlight: 10, gamma: 1.0, noise: 2
+      },
+      'bw-silver': {
+        brightness: 1.15, contrast: 1.25, saturate: 0, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 12,
+        exposure: 0.2, temperature: -5, tint: 0, vibrance: 0, shadow: 15, highlight: -10, gamma: 1.2, noise: 0
+      },
+      'bw-charcoal': {
+        brightness: 0.8, contrast: 1.4, saturate: 0, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 8,
+        exposure: -0.35, temperature: 0, tint: 0, vibrance: 0, shadow: 60, highlight: -55, gamma: 1.35, noise: 3
+      },
+      'bw-sepia': {
+        brightness: 1.0, contrast: 1.1, saturate: 0.2, hue: 30, blur: 0, scale: 1,
+        sepia: 80, grayscale: 30, invert: 0, opacity: 1, sharpen: 5,
+        exposure: 0.0, temperature: 15, tint: -10, vibrance: 0, shadow: 10, highlight: -8, gamma: 1.1, noise: 2
+      },
+      'bw-street': {
+        brightness: 0.95, contrast: 1.35, saturate: 0, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 100, invert: 0, opacity: 1, sharpen: 18,
+        exposure: -0.1, temperature: 0, tint: 0, vibrance: 0, shadow: 35, highlight: -30, gamma: 1.28, noise: 1
       },
     }
   },
@@ -346,6 +596,87 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
         sepia: 0, grayscale: 0, invert: 0, opacity: 0.98, sharpen: 0,
         exposure: 0.45, temperature: 20, tint: 15, vibrance: 20, shadow: -30, highlight: 35, gamma: 0.82, noise: 0
       },
+      'dreamy-haze': {
+        brightness: 1.1, contrast: 0.85, saturate: 1.1, hue: 0, blur: 2.5, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 0.9, sharpen: 0,
+        exposure: 0.38, temperature: 8, tint: 8, vibrance: 10, shadow: -20, highlight: 28, gamma: 0.8, noise: 1
+      },
+      'dreamy-fantasy': {
+        brightness: 1.18, contrast: 0.92, saturate: 1.3, hue: 20, blur: 1.8, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 0.93, sharpen: 0,
+        exposure: 0.5, temperature: 15, tint: 18, vibrance: 25, shadow: -28, highlight: 40, gamma: 0.78, noise: 0
+      },
+      'dreamy-angelic': {
+        brightness: 1.2, contrast: 0.8, saturate: 1.0, hue: 0, blur: 1.2, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 0.9, sharpen: 0,
+        exposure: 0.6, temperature: 5, tint: 5, vibrance: 5, shadow: -35, highlight: 45, gamma: 0.75, noise: 0
+      },
+      'dreamy-surreal': {
+        brightness: 1.1, contrast: 1.0, saturate: 1.4, hue: 45, blur: 1.0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 0.96, sharpen: 0,
+        exposure: 0.3, temperature: 0, tint: 20, vibrance: 30, shadow: -10, highlight: 20, gamma: 0.92, noise: 0
+      },
+      'dreamy-lullaby': {
+        brightness: 1.08, contrast: 0.9, saturate: 1.1, hue: -10, blur: 1.6, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 0.94, sharpen: 0,
+        exposure: 0.28, temperature: 10, tint: -10, vibrance: 12, shadow: -15, highlight: 25, gamma: 0.88, noise: 0
+      },
+    }
+  },
+  {
+    name: 'Urban',
+    icon: '🏢',
+    presets: {
+      'urban-modern': {
+        brightness: 1.05, contrast: 1.15, saturate: 1.1, hue: 0, blur: 0, scale: 1,
+        sepia: 0, grayscale: 5, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.1, temperature: -5, tint: 5, vibrance: 10, shadow: 15, highlight: -10, gamma: 1.1, noise: 0
+      },
+      'urban-night': {
+        brightness: 0.9, contrast: 1.25, saturate: 1.2, hue: 210, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 12,
+        exposure: -0.15, temperature: -15, tint: 10, vibrance: 20, shadow: 30, highlight: -20, gamma: 1.2, noise: 1
+      },
+      'urban-decay': {
+        brightness: 0.95, contrast: 1.2, saturate: 0.9, hue: 10, blur: 0.1, scale: 1,
+        sepia: 15, grayscale: 10, invert: 0, opacity: 1, sharpen: 8,
+        exposure: -0.1, temperature: 5, tint: -5, vibrance: -5, shadow: 25, highlight: -15, gamma: 1.15, noise: 2
+      },
+      'urban-blue': {
+        brightness: 1.0, contrast: 1.1, saturate: 1.1, hue: 220, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 5,
+        exposure: 0.05, temperature: -20, tint: -10, vibrance: 15, shadow: 10, highlight: -5, gamma: 1.08, noise: 0
+      },
+      'urban-warm': {
+        brightness: 1.08, contrast: 1.18, saturate: 1.25, hue: 25, blur: 0, scale: 1,
+        sepia: 10, grayscale: 0, invert: 0, opacity: 1, sharpen: 6,
+        exposure: 0.15, temperature: 20, tint: 8, vibrance: 25, shadow: 5, highlight: 15, gamma: 1.12, noise: 0
+      },
+      'urban-green': {
+        brightness: 1.02, contrast: 1.12, saturate: 1.3, hue: 140, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 4,
+        exposure: 0.1, temperature: -10, tint: -8, vibrance: 30, shadow: 12, highlight: -8, gamma: 1.06, noise: 0
+      },
+      'urban-red': {
+        brightness: 1.06, contrast: 1.2, saturate: 1.4, hue: 350, blur: 0, scale: 1,
+        sepia: 5, grayscale: 0, invert: 0, opacity: 1, sharpen: 9,
+        exposure: 0.12, temperature: 15, tint: 10, vibrance: 35, shadow: 18, highlight: -12, gamma: 1.14, noise: 0
+      },
+      'urban-yellow': {
+        brightness: 1.1, contrast: 1.15, saturate: 1.35, hue: 45, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 7,
+        exposure: 0.2, temperature: 25, tint: 15, vibrance: 30, shadow: 0, highlight: 20, gamma: 1.1, noise: 0
+      },
+      'urban-purple': {
+        brightness: 1.04, contrast: 1.18, saturate: 1.45, hue: 280, blur: 0, scale: 1,
+        sepia: 0, grayscale: 0, invert: 0, opacity: 1, sharpen: 11,
+        exposure: 0.1, temperature: -12, tint: 18, vibrance: 40, shadow: 22, highlight: -18, gamma: 1.16, noise: 0
+      },
+      'urban-orange': {
+        brightness: 1.09, contrast: 1.22, saturate: 1.5, hue: 30, blur: 0, scale: 1,
+        sepia: 8, grayscale: 0, invert: 0, opacity: 1, sharpen: 10,
+        exposure: 0.18, temperature: 22, tint: 12, vibrance: 45, shadow: 15, highlight: 10, gamma: 1.18, noise: 0
+      },
     }
   },
 ];
@@ -357,4 +688,3 @@ export const ALL_PRESETS: Record<string, FilterSettings> = PRESET_CATEGORIES.red
   });
   return acc;
 }, {} as Record<string, FilterSettings>);
-

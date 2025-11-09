@@ -16,7 +16,7 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
     if (key === 'hue') return `${value}°`;
     if (key === 'blur') return `${value}px`;
     if (key === 'scale') return `${value}x`;
-    if (key === 'sepia' || key === 'grayscale' || key === 'invert' || key === 'sharpen' || key === 'exposure' || key === 'temperature' || key === 'tint' || key === 'vibrance' || key === 'shadow' || key === 'highlight' || key === 'noise') {
+    if (key === 'sepia' || key === 'grayscale' || key === 'invert' || key === 'sharpen' || key === 'exposure' || key === 'temperature' || key === 'tint' || key === 'vibrance' || key === 'shadow' || key === 'highlight' || key === 'noise' || key === 'vignette' || key === 'clarity' || key === 'grain') {
       if (key === 'exposure') return `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
       if (key === 'temperature' || key === 'tint') return `${value > 0 ? '+' : ''}${value}`;
       return `${value}%`;
@@ -46,6 +46,9 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
     { key: 'sepia' as const, label: 'Sepia', min: 0, max: 100, step: 1, icon: '📸', category: 'Effects' },
     { key: 'grayscale' as const, label: 'Grayscale', min: 0, max: 100, step: 1, icon: '⚫', category: 'Effects' },
     { key: 'invert' as const, label: 'Invert', min: 0, max: 100, step: 1, icon: '🔄', category: 'Effects' },
+    { key: 'vignette' as const, label: 'Vignette', min: 0, max: 100, step: 1, icon: '🖼️', category: 'Effects' },
+    { key: 'clarity' as const, label: 'Clarity', min: 0, max: 100, step: 1, icon: '쨍', category: 'Effects' },
+    { key: 'grain' as const, label: 'Grain', min: 0, max: 100, step: 1, icon: '🎞️', category: 'Effects' },
     
     // Toning
     { key: 'shadow' as const, label: 'Shadows', min: -100, max: 100, step: 1, icon: '🌑', category: 'Toning' },

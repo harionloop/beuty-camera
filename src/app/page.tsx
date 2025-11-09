@@ -12,7 +12,7 @@ import { toast } from 'react-hot-toast';
 
 
 export default function Home() {
-  const { videoRef, canvasRef, isActive, filters, setFilters, startCamera, stopCamera, capture } = useCamera();
+  const { videoRef, canvasRef, isActive, filters, setFilters, startCamera, stopCamera, capture, isTorchOn, toggleTorch } = useCamera();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const [mirrorImage, setMirrorImage] = useState(true);
@@ -294,6 +294,22 @@ export default function Home() {
                 <span className="sm:hidden">🪞</span>
               </span>
             </label>
+
+            {/* Torch Toggle */}
+            <button
+              onClick={toggleTorch}
+              disabled={!isActive}
+              className={`px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl border transition-all duration-200 backdrop-blur-sm shadow-lg ${
+                isTorchOn
+                  ? 'bg-yellow-400/80 border-yellow-300/90 text-black'
+                  : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white/90 hover:border-white/30 hover:bg-white/15'
+              }`}
+            >
+              <span className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5">
+                <span className="text-sm">{isTorchOn ? '💡' : '🔦'}</span>
+                <span className="hidden sm:inline">{isTorchOn ? 'Torch ON' : 'Torch OFF'}</span>
+              </span>
+            </button>
           </div>
 
           {/* Presets */}

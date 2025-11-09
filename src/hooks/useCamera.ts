@@ -22,6 +22,9 @@ export interface FilterSettings {
   highlight: number;
   gamma: number;
   noise: number;
+  vignette: number;
+  clarity: number;
+  grain: number;
 }
 
 export function useCamera() {
@@ -31,6 +34,7 @@ export function useCamera() {
   const rafIdRef = useRef<number | null>(null);
 
   const [isActive, setIsActive] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
   const [filters, setFilters] = useState<FilterSettings>({
     brightness: 1,
     contrast: 1,
@@ -51,28 +55,24 @@ export function useCamera() {
     highlight: 0,
     gamma: 1,
     noise: 0,
+    vignette: 0,
+    clarity: 0,
+    grain: 0,
   });
 
   const getFilterString = useCallback(() => {
-    const { brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity, exposure, temperature, tint, vibrance, shadow, highlight, gamma } = filters;
+    const { 
+      brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity,
+      sharpen, exposure, temperature, tint, vibrance, shadow, highlight, gamma
+    } = filters;
     
-    // Calculate exposure adjustment (exposure is in EV, convert to brightness multiplier)
-    const exposureBrightness = Math.pow(2, exposure);
-    const adjustedBrightness = brightness * exposureBrightness;
-    
-    // Temperature adjustment (warm/cool) - affects red/blue channels
-    // Temperature: positive = warm (more red), negative = cool (more blue)
-    const tempHue = temperature * 0.1; // Convert to hue shift
-    
-    // Tint adjustment (green/magenta)
-    const tintHue = tint * 0.05;
-    
+    // CSS filter string construction
     const filtersArray = [
-      `blur(${blur}px)`,
-      `brightness(${adjustedBrightness})`,
+      `brightness(${brightness})`,
       `contrast(${contrast})`,
-      `saturate(${saturate + vibrance * 0.1})`, // Combine saturation and vibrance
-      `hue-rotate(${hue + tempHue + tintHue}deg)`,
+      `saturate(${saturate})`,
+      `hue-rotate(${hue}deg)`,
+      `blur(${blur}px)`,
       `sepia(${sepia}%)`,
       `grayscale(${grayscale}%)`,
       `invert(${invert}%)`,
@@ -81,6 +81,22 @@ export function useCamera() {
     
     return filtersArray.join(' ');
   }, [filters]);
+
+  const toggleTorch = useCallback(async () => {
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack && 'torch' in videoTrack.getCapabilities()) {
+        try {
+          await videoTrack.applyConstraints({
+            advanced: [{ torch: !isTorchOn }],
+          });
+          setIsTorchOn(!isTorchOn);
+        } catch (err) {
+          console.error('Failed to toggle torch', err);
+        }
+      }
+    }
+  }, [isTorchOn]);
 
   const startCamera = useCallback(async () => {
     try {
@@ -110,6 +126,7 @@ export function useCamera() {
       videoRef.current.srcObject = null;
     }
     setIsActive(false);
+    setIsTorchOn(false);
     stopPreviewLoop();
   }, []);
 
@@ -129,7 +146,7 @@ export function useCamera() {
       canvas.height = videoHeight;
     }
 
-    const { scale } = filters;
+    const { scale, vignette, clarity, grain } = filters;
     const srcW = videoWidth;
     const srcH = videoHeight;
     const drawW = Math.round(srcW / scale);
@@ -142,6 +159,43 @@ export function useCamera() {
     // Draw without mirroring (CSS will handle mirroring for preview)
     ctx.drawImage(video, sx, sy, drawW, drawH, 0, 0, canvas.width, canvas.height);
     ctx.restore();
+
+    // Apply vignette
+    if (vignette > 0) {
+      ctx.save();
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.width / 2 - vignette * 5,
+        canvas.width / 2, canvas.height / 2, canvas.width / 2
+      );
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, `rgba(0,0,0,${vignette / 100})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Apply clarity
+    if (clarity > 0) {
+      ctx.save();
+      ctx.filter = `contrast(${1 + clarity / 100})`;
+      ctx.drawImage(canvas, 0, 0);
+      ctx.restore();
+    }
+
+    // Apply grain
+    if (grain > 0) {
+      ctx.save();
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * grain;
+        data[i] += noise;
+        data[i + 1] += noise;
+        data[i + 2] += noise;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      ctx.restore();
+    }
   }, [filters, getFilterString]);
 
   const startPreviewLoop = useCallback(() => {
@@ -178,7 +232,7 @@ export function useCamera() {
       canvas.height = videoHeight;
     }
 
-    const { scale } = filters;
+    const { scale, vignette, clarity, grain } = filters;
     const srcW = videoWidth;
     const srcH = videoHeight;
     const drawW = Math.round(srcW / scale);
@@ -197,6 +251,43 @@ export function useCamera() {
     
     ctx.drawImage(video, sx, sy, drawW, drawH, 0, 0, canvas.width, canvas.height);
     ctx.restore();
+
+    // Apply vignette
+    if (vignette > 0) {
+      ctx.save();
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.width / 2 - vignette * 5,
+        canvas.width / 2, canvas.height / 2, canvas.width / 2
+      );
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, `rgba(0,0,0,${vignette / 100})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Apply clarity
+    if (clarity > 0) {
+      ctx.save();
+      ctx.filter = `contrast(${1 + clarity / 100})`;
+      ctx.drawImage(canvas, 0, 0);
+      ctx.restore();
+    }
+
+    // Apply grain
+    if (grain > 0) {
+      ctx.save();
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * grain;
+        data[i] += noise;
+        data[i + 1] += noise;
+        data[i + 2] += noise;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      ctx.restore();
+    }
 
     return new Promise((resolve, reject) => {
       canvas.toBlob(
@@ -258,6 +349,7 @@ export function useCamera() {
     startCamera,
     stopCamera,
     capture,
+    isTorchOn,
+    toggleTorch,
   };
 }
-

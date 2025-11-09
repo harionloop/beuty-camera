@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FilterSettings } from '@/hooks/useCamera';
 import { PRESET_CATEGORIES } from '@/lib/presets';
 import { gsap } from 'gsap';
@@ -12,6 +12,12 @@ interface PresetCategoriesProps {
 
 export default function PresetCategories({ onPresetSelect }: PresetCategoriesProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (PRESET_CATEGORIES.length > 0) {
+      setActiveCategory(PRESET_CATEGORIES[0].name);
+    }
+  }, []);
 
   const handlePresetClick = (preset: FilterSettings, name: string, categoryName: string) => {
     onPresetSelect(preset);
@@ -65,4 +71,3 @@ export default function PresetCategories({ onPresetSelect }: PresetCategoriesPro
     </div>
   );
 }
-
