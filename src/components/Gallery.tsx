@@ -147,24 +147,25 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
 
   return (
     <div className="flex flex-col gap-3 h-full flex-1 min-h-0">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <div className="font-bold text-lg bg-gradient-to-r from-[#a855f7] to-[#ec4899] bg-clip-text text-transparent">
+          <div className="font-bold text-base sm:text-lg bg-gradient-to-r from-[#a855f7] to-[#ec4899] bg-clip-text text-transparent">
             Gallery
           </div>
-          <div className="text-xs text-white/70">{photos.length} image{photos.length !== 1 ? 's' : ''}</div>
+          <div className="text-[10px] sm:text-xs text-white/70">{photos.length} image{photos.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="flex gap-2 items-center">
           <button
             onClick={handleDownloadAll}
-            className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-white/10 to-white/5 border border-white/20 hover:border-white/30 hover:bg-white/15 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-white/10 to-white/5 border border-white/20 hover:border-white/30 hover:bg-white/15 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            Download All
+            <span className="hidden sm:inline">Download All</span>
+            <span className="sm:hidden">⬇ All</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 overflow-y-auto flex-1 min-h-0 p-1 custom-scrollbar">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-3 overflow-y-auto flex-1 min-h-0 p-1 custom-scrollbar">
         {photos.length === 0 ? (
           <div className="text-xs text-white/60 p-6 text-center">
             No photos yet — capture to fill the gallery.
@@ -174,11 +175,11 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
             // Use Cloudinary URL if available, otherwise use local blob URL
             const imageUrl = item.cloudinaryUrl || URL.createObjectURL(item.blob);
             return (
-              <div key={item.id} className="relative rounded-xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-[1.02]">
+              <div key={item.id} className="relative rounded-lg sm:rounded-xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-[1.02]">
                 <img
                   src={imageUrl}
                   alt={`photo-${item.id}`}
-                  className="w-full h-48 object-cover block"
+                  className="w-full h-32 sm:h-40 lg:h-48 object-cover block"
                 />
                 <div className="absolute left-2 bottom-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-xs">
                   {new Date(item.createdAt).toLocaleString()}

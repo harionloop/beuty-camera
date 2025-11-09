@@ -64,28 +64,28 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
         <span>Filters & Effects</span>
         <span className="text-white/50 text-[10px]">{sliders.length} filters</span>
       </div>
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 sm:space-y-4">
         {categories.map((category) => {
           const categorySliders = sliders.filter(s => s.category === category);
           if (categorySliders.length === 0) return null;
           
           return (
             <div key={category} className="space-y-2">
-              <div className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-2">
+              <div className="text-[10px] sm:text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
                 {category}
               </div>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                 {categorySliders.map(({ key, label, min, max, step, icon }) => (
                   <div
                     key={key}
-                    className="bg-gradient-to-b from-white/10 to-white/5 p-2.5 rounded-lg border border-white/20 hover:border-white/30 transition-all hover:scale-[1.02]"
+                    className="bg-gradient-to-b from-white/10 to-white/5 p-2 sm:p-2.5 rounded-lg border border-white/20 hover:border-white/30 transition-all hover:scale-[1.02]"
                   >
-                    <label className="flex items-center justify-between text-xs text-white/90 mb-1.5">
+                    <label className="flex items-center justify-between text-[10px] sm:text-xs text-white/90 mb-1 sm:mb-1.5">
                       <span className="flex items-center gap-1">
-                        <span className="text-sm">{icon}</span>
-                        <span className="font-medium text-[11px]">{label}</span>
+                        <span className="text-xs sm:text-sm">{icon}</span>
+                        <span className="font-medium text-[10px] sm:text-[11px]">{label}</span>
                       </span>
-                      <span className="text-white/70 font-mono text-[10px]">{formatValue(key, filters[key])}</span>
+                      <span className="text-white/70 font-mono text-[9px] sm:text-[10px]">{formatValue(key, filters[key])}</span>
                     </label>
                     <input
                       type="range"
