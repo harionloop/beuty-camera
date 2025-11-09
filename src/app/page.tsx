@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useCamera, FilterSettings } from '@/hooks/useCamera';
 import FilterSliders from '@/components/FilterSliders';
 import Gallery from '@/components/Gallery';
+import ConfirmModal from '@/components/ConfirmModal';
 import { savePhoto, updatePhoto, PhotoMeta } from '@/lib/indexeddb';
 import { gsap } from 'gsap';
 import { toast } from 'react-hot-toast';
@@ -55,6 +56,34 @@ export default function Home() {
   const { videoRef, canvasRef, isActive, filters, setFilters, startCamera, stopCamera, capture } = useCamera();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
+  const [mirrorImage, setMirrorImage] = useState(true);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    type: 'danger' | 'warning' | 'info' = 'info'
+  ) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      type,
+    });
+  };
 
   const handleStartCamera = async () => {
     try {
@@ -94,7 +123,8 @@ export default function Home() {
         });
       }
 
-      const blob = await capture();
+      // Capture with mirror option
+      const blob = await capture(mirrorImage);
       const meta: PhotoMeta = {
         filters: {
           brightness: filters.brightness.toString(),
@@ -156,7 +186,7 @@ export default function Home() {
       console.error('Capture failed', err);
       toast.error('Failed to capture photo. Make sure the camera is active.');
     }
-  }, [capture, filters, isActive]);
+  }, [capture, filters, isActive, mirrorImage]);
 
   const handlePreset = (presetKey: string) => {
     const preset = PRESETS[presetKey];
@@ -188,7 +218,19 @@ export default function Home() {
   }, [handleCapture]);
 
   return (
-    <div className="h-screen w-screen flex bg-gradient-to-br from-[#1a1f35] via-[#252b45] to-[#1a1f35] text-[#f0f4f8] overflow-hidden">
+    <>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={() => {
+          confirmModal.onConfirm();
+          setConfirmModal({ ...confirmModal, isOpen: false });
+        }}
+        onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        type={confirmModal.type}
+      />
+      <div className="h-screen w-screen flex bg-gradient-to-br from-[#1a1f35] via-[#252b45] to-[#1a1f35] text-[#f0f4f8] overflow-hidden">
         {/* Left Section - 70% - Camera & Filters */}
         <div className="w-[70%] flex flex-col p-6 gap-4 overflow-hidden">
           {/* Header */}
@@ -260,6 +302,17 @@ export default function Home() {
             >
               📸 Capture
             </button>
+
+            {/* Mirror Toggle */}
+            <label className="flex gap-2 items-center ml-auto bg-white/5 px-4 py-2 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mirrorImage}
+                onChange={(e) => setMirrorImage(e.target.checked)}
+                className="cursor-pointer"
+              />
+              <span className="text-xs font-medium">🪞 Mirror Image</span>
+            </label>
           </div>
 
           {/* Presets */}
@@ -286,8 +339,9 @@ export default function Home() {
 
         {/* Right Section - 30% - Gallery */}
         <div className="w-[30%] border-l border-white/10 bg-gradient-to-b from-white/5 to-transparent p-4 overflow-hidden flex flex-col backdrop-blur-sm">
-          <Gallery />
+          <Gallery onShowConfirm={showConfirm} />
         </div>
       </div>
+    </>
   );
 }

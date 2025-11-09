@@ -160,14 +160,43 @@ export function useCamera() {
     }
   }, []);
 
-  const capture = useCallback(async (): Promise<Blob> => {
+  const capture = useCallback(async (mirror: boolean = true): Promise<Blob> => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState < 2) {
       throw new Error('Camera not ready');
     }
 
-    drawToCanvas();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Failed to get canvas context');
+
+    // Set canvas dimensions
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+    if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+    }
+
+    const { scale } = filters;
+    const srcW = videoWidth;
+    const srcH = videoHeight;
+    const drawW = Math.round(srcW / scale);
+    const drawH = Math.round(srcH / scale);
+    const sx = Math.max(0, Math.round((srcW - drawW) / 2));
+    const sy = Math.max(0, Math.round((srcH - drawH) / 2));
+
+    ctx.save();
+    ctx.filter = getFilterString();
+    
+    // Apply mirroring if requested
+    if (mirror) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    
+    ctx.drawImage(video, sx, sy, drawW, drawH, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
     return new Promise((resolve, reject) => {
       canvas.toBlob(
@@ -182,7 +211,7 @@ export function useCamera() {
         0.92
       );
     });
-  }, [drawToCanvas]);
+  }, [filters, getFilterString]);
 
   useEffect(() => {
     const video = videoRef.current;

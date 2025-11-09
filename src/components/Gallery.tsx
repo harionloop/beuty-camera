@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { PhotoItem, listPhotos, deletePhoto, getPhoto, clearGallery } from '@/lib/indexeddb';
+import { toast } from 'react-hot-toast';
 
-export default function Gallery() {
+interface GalleryProps {
+  onShowConfirm: (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    type?: 'danger' | 'warning' | 'info'
+  ) => void;
+}
+
+export default function Gallery({ onShowConfirm }: GalleryProps) {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,19 +42,30 @@ export default function Gallery() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this photo?')) return;
-    try {
-      await deletePhoto(id);
-      await refreshGallery();
-    } catch (err) {
-      console.error('Failed to delete photo', err);
-    }
+    onShowConfirm(
+      'Delete Photo',
+      'Are you sure you want to delete this photo? This action cannot be undone.',
+      async () => {
+        try {
+          await deletePhoto(id);
+          await refreshGallery();
+          toast.success('Photo deleted');
+        } catch (err) {
+          console.error('Failed to delete photo', err);
+          toast.error('Failed to delete photo');
+        }
+      },
+      'danger'
+    );
   };
 
   const handleDownload = async (id: number) => {
     try {
       const item = await getPhoto(id);
-      if (!item) return;
+      if (!item) {
+        toast.error('Photo not found');
+        return;
+      }
       
       // If Cloudinary URL exists, download from there, otherwise use local blob
       if (item.cloudinaryUrl) {
@@ -55,6 +76,7 @@ export default function Gallery() {
         document.body.appendChild(a);
         a.click();
         a.remove();
+        toast.success('Download started');
       } else {
         const url = URL.createObjectURL(item.blob);
         const a = document.createElement('a');
@@ -64,40 +86,59 @@ export default function Gallery() {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+        toast.success('Download started');
       }
     } catch (err) {
       console.error('Failed to download photo', err);
+      toast.error('Failed to download photo');
     }
   };
 
   const handleDownloadAll = async () => {
     if (photos.length === 0) {
-      alert('No images to download.');
+      toast.error('No images to download');
       return;
     }
-    if (!confirm(`Download ${photos.length} images? Your browser may prompt for multiple downloads.`)) return;
     
-    for (const item of photos) {
-      const url = URL.createObjectURL(item.blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      await new Promise((r) => setTimeout(r, 120));
-    }
+    onShowConfirm(
+      'Download All Photos',
+      `Download ${photos.length} image${photos.length > 1 ? 's' : ''}? Your browser may prompt for multiple downloads.`,
+      async () => {
+        for (const item of photos) {
+          const url = item.cloudinaryUrl || URL.createObjectURL(item.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          if (!item.cloudinaryUrl) {
+            URL.revokeObjectURL(url);
+          }
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        toast.success(`Downloaded ${photos.length} image${photos.length > 1 ? 's' : ''}`);
+      },
+      'info'
+    );
   };
 
   const handleClear = async () => {
-    if (!confirm('Clear all saved photos from local gallery? This cannot be undone.')) return;
-    try {
-      await clearGallery();
-      await refreshGallery();
-    } catch (err) {
-      console.error('Failed to clear gallery', err);
-    }
+    onShowConfirm(
+      'Clear Gallery',
+      'Are you sure you want to clear all photos from the gallery? This action cannot be undone.',
+      async () => {
+        try {
+          await clearGallery();
+          await refreshGallery();
+          toast.success('Gallery cleared');
+        } catch (err) {
+          console.error('Failed to clear gallery', err);
+          toast.error('Failed to clear gallery');
+        }
+      },
+      'danger'
+    );
   };
 
   if (loading) {
@@ -174,4 +215,3 @@ export default function Gallery() {
     </div>
   );
 }
-
