@@ -149,13 +149,15 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
     <div className="flex flex-col gap-3 h-full flex-1 min-h-0">
       <div className="flex items-center justify-between">
         <div>
-          <div className="font-bold text-lg">Gallery</div>
+          <div className="font-bold text-lg bg-gradient-to-r from-[#a855f7] to-[#ec4899] bg-clip-text text-transparent">
+            Gallery
+          </div>
           <div className="text-xs text-white/70">{photos.length} image{photos.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="flex gap-2 items-center">
           <button
             onClick={handleDownloadAll}
-            className="px-2 py-1.5 text-xs rounded-lg bg-white/10 border border-white/30 hover:bg-white/20 transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-white/10 to-white/5 border border-white/20 hover:border-white/30 hover:bg-white/15 transition-all duration-200 shadow-md hover:shadow-lg"
           >
             Download All
           </button>
@@ -172,7 +174,7 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
             // Use Cloudinary URL if available, otherwise use local blob URL
             const imageUrl = item.cloudinaryUrl || URL.createObjectURL(item.blob);
             return (
-              <div key={item.id} className="relative rounded-lg overflow-hidden border border-white/20 hover:border-white/40 transition-colors group">
+              <div key={item.id} className="relative rounded-xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-[1.02]">
                 <img
                   src={imageUrl}
                   alt={`photo-${item.id}`}
@@ -207,7 +209,7 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
         </div>
         <button
           onClick={handleClear}
-          className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-[#ff7b7b] to-[#ffb47b] text-[#211] hover:opacity-90 transition-opacity"
+          className="px-4 py-2 text-xs rounded-lg bg-gradient-to-r from-[#ef4444] to-[#dc2626] text-white hover:from-[#dc2626] hover:to-[#b91c1c] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
         >
           Clear All
         </button>
