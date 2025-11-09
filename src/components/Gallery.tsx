@@ -31,20 +31,15 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
 
   useEffect(() => {
     refreshGallery();
-    // Listen for custom event when a photo is added
-    const handlePhotoAdded = () => {
-      refreshGallery();
-    };
+    const handlePhotoAdded = () => refreshGallery();
     window.addEventListener('photoAdded', handlePhotoAdded);
-    return () => {
-      window.removeEventListener('photoAdded', handlePhotoAdded);
-    };
+    return () => window.removeEventListener('photoAdded', handlePhotoAdded);
   }, []);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     onShowConfirm(
       'Delete Photo',
-      'Are you sure you want to delete this photo? This action cannot be undone.',
+      'Are you sure you want to permanently delete this photo?',
       async () => {
         try {
           await deletePhoto(id);
@@ -67,34 +62,23 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
         return;
       }
       
-      // If Cloudinary URL exists, download from there, otherwise use local blob
-      if (item.cloudinaryUrl) {
-        const a = document.createElement('a');
-        a.href = item.cloudinaryUrl;
-        a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast.success('Download started');
-      } else {
-        const url = URL.createObjectURL(item.blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        toast.success('Download started');
-      }
+      const url = item.cloudinaryUrl || URL.createObjectURL(item.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
+      a.target = '_blank'; // Open in new tab for cloud URLs
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if (!item.cloudinaryUrl) URL.revokeObjectURL(url);
+      toast.success('Download started');
     } catch (err) {
       console.error('Failed to download photo', err);
       toast.error('Failed to download photo');
     }
   };
 
-  const handleDownloadAll = async () => {
+  const handleDownloadAll = () => {
     if (photos.length === 0) {
       toast.error('No images to download');
       return;
@@ -102,20 +86,11 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
     
     onShowConfirm(
       'Download All Photos',
-      `Download ${photos.length} image${photos.length > 1 ? 's' : ''}? Your browser may prompt for multiple downloads.`,
+      `Download ${photos.length} image${photos.length > 1 ? 's' : ''}?`,
       async () => {
         for (const item of photos) {
-          const url = item.cloudinaryUrl || URL.createObjectURL(item.blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          if (!item.cloudinaryUrl) {
-            URL.revokeObjectURL(url);
-          }
-          await new Promise((r) => setTimeout(r, 120));
+          await handleDownload(item.id);
+          await new Promise((r) => setTimeout(r, 200)); // Stagger downloads
         }
         toast.success(`Downloaded ${photos.length} image${photos.length > 1 ? 's' : ''}`);
       },
@@ -123,10 +98,10 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
     );
   };
 
-  const handleClear = async () => {
+  const handleClear = () => {
     onShowConfirm(
       'Clear Gallery',
-      'Are you sure you want to clear all photos from the gallery? This action cannot be undone.',
+      'Are you sure you want to clear all photos? This cannot be undone.',
       async () => {
         try {
           await clearGallery();
@@ -142,77 +117,79 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
   };
 
   if (loading) {
-    return <div className="text-white/60 p-3">Loading gallery...</div>;
+    return <div className="text-white/60 p-4 text-center">Loading Gallery...</div>;
   }
 
   return (
-    <div className="flex flex-col gap-3 h-full flex-1 min-h-0">
+    <div className="flex flex-col gap-4 h-full flex-1 min-h-0">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <div className="font-bold text-base sm:text-lg bg-gradient-to-r from-[#a855f7] to-[#ec4899] bg-clip-text text-transparent">
-            Gallery
+          <div className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Your Gallery
           </div>
-          <div className="text-[10px] sm:text-xs text-white/70">{photos.length} image{photos.length !== 1 ? 's' : ''}</div>
+          <div className="text-xs text-white/60">{photos.length} image{photos.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="flex gap-2 items-center">
           <button
             onClick={handleDownloadAll}
-            className="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-white/10 to-white/5 border border-white/20 hover:border-white/30 hover:bg-white/15 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="btn-glow px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-md hover:shadow-lg"
           >
-            <span className="hidden sm:inline">Download All</span>
-            <span className="sm:hidden">⬇ All</span>
+            ⬇ Download All
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-3 overflow-y-auto flex-1 min-h-0 p-1 custom-scrollbar">
-        {photos.length === 0 ? (
-          <div className="text-xs text-white/60 p-6 text-center">
-            No photos yet — capture to fill the gallery.
-          </div>
-        ) : (
-          photos.map((item) => {
-            // Use Cloudinary URL if available, otherwise use local blob URL
-            const imageUrl = item.cloudinaryUrl || URL.createObjectURL(item.blob);
-            return (
-              <div key={item.id} className="relative rounded-lg sm:rounded-xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-[1.02]">
-                <img
-                  src={imageUrl}
-                  alt={`photo-${item.id}`}
-                  className="w-full h-32 sm:h-40 lg:h-48 object-cover block"
-                />
-                <div className="absolute left-2 bottom-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-xs">
-                  {new Date(item.createdAt).toLocaleString()}
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+          {photos.length === 0 ? (
+            <div className="text-sm text-white/50 p-8 text-center col-span-full">
+              Your captured photos will appear here.
+            </div>
+          ) : (
+            photos.map((item) => {
+              const imageUrl = item.cloudinaryUrl || URL.createObjectURL(item.blob);
+              return (
+                <div key={item.id} className="relative rounded-xl overflow-hidden border-2 border-white/10 hover:border-purple-400/70 transition-all duration-300 group shadow-lg hover:shadow-purple-500/20 hover:scale-[1.03] animated-border aspect-w-16 aspect-h-9">
+                  <img
+                    src={imageUrl}
+                    alt={`photo-${item.id}`}
+                    className="w-full h-full object-cover"
+                    onLoad={() => { if (!item.cloudinaryUrl) URL.revokeObjectURL(imageUrl) }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute left-3 bottom-3 text-xs text-white/80 drop-shadow-md">
+                    {new Date(item.createdAt).toLocaleString()}
+                  </div>
+                  <div className="absolute right-3 top-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      onClick={() => handleDownload(item.id)}
+                      className="px-2.5 py-1.5 text-sm rounded-md bg-black/40 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-colors"
+                    >
+                      ⬇
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="px-2.5 py-1.5 text-sm rounded-md bg-red-600/60 backdrop-blur-md border border-red-400/30 hover:bg-red-500 transition-colors"
+                    >
+                      🗑
+                    </button>
+                  </div>
                 </div>
-                <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleDownload(item.id)}
-                    className="px-2 py-1 text-xs rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-colors"
-                  >
-                    ⬇
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="px-2 py-1 text-xs rounded-lg bg-red-500/80 backdrop-blur-sm border border-red-400/30 hover:bg-red-500 transition-colors"
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
       </div>
 
-      <div className="flex gap-2 items-center justify-between pt-2 border-t border-white/10">
-        <div className="text-xs text-white/60">
-          Stored locally
+      <div className="flex items-center justify-between pt-3 border-t-2 border-white/10">
+        <div className="text-xs text-white/50">
+          Images stored in browser
         </div>
         <button
           onClick={handleClear}
-          className="px-4 py-2 text-xs rounded-lg bg-gradient-to-r from-[#ef4444] to-[#dc2626] text-white hover:from-[#dc2626] hover:to-[#b91c1c] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+          className="btn-glow px-4 py-2 text-xs rounded-lg bg-gradient-to-r from-red-600 to-red-800 text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-red-500/30 font-semibold"
         >
-          Clear All
+          Clear Gallery
         </button>
       </div>
     </div>

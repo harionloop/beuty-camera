@@ -14,14 +14,14 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
 
   const formatValue = (key: keyof FilterSettings, value: number): string => {
     if (key === 'hue') return `${value}°`;
-    if (key === 'blur') return `${value}px`;
-    if (key === 'scale') return `${value}x`;
-    if (key === 'sepia' || key === 'grayscale' || key === 'invert' || key === 'sharpen' || key === 'exposure' || key === 'temperature' || key === 'tint' || key === 'vibrance' || key === 'shadow' || key === 'highlight' || key === 'noise' || key === 'vignette' || key === 'clarity' || key === 'grain') {
-      if (key === 'exposure') return `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
-      if (key === 'temperature' || key === 'tint') return `${value > 0 ? '+' : ''}${value}`;
-      return `${value}%`;
+    if (key === 'blur') return `${value.toFixed(1)}px`;
+    if (key === 'scale') return `${value.toFixed(2)}x`;
+    if (['sepia', 'grayscale', 'invert', 'sharpen', 'noise', 'vignette', 'clarity', 'grain'].includes(key)) {
+      return `${Math.round(value)}%`;
     }
-    if (key === 'opacity' || key === 'gamma') return Number(value).toFixed(2);
+    if (['exposure', 'temperature', 'tint', 'vibrance', 'shadow', 'highlight'].includes(key)) {
+      return `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
+    }
     return Number(value).toFixed(2);
   };
 
@@ -62,33 +62,35 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
   const categories = ['Basic', 'Color', 'Effects', 'Toning', 'Transform'];
 
   return (
-    <div className="space-y-3 h-full flex flex-col">
-      <div className="text-xs font-semibold text-white/90 mb-2 flex items-center justify-between">
-        <span>Filters & Effects</span>
-        <span className="text-white/50 text-[10px]">{sliders.length} filters</span>
+    <div className="space-y-4 h-full flex flex-col">
+      <div className="text-sm font-semibold text-white/90 flex items-center justify-between">
+        <span>Adjustments & Effects</span>
+        <span className="text-white/50 text-xs">{sliders.length} controls</span>
       </div>
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 sm:space-y-4">
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
         {categories.map((category) => {
           const categorySliders = sliders.filter(s => s.category === category);
           if (categorySliders.length === 0) return null;
           
           return (
-            <div key={category} className="space-y-2">
-              <div className="text-[10px] sm:text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+            <div key={category} className="space-y-3">
+              <div className="text-xs font-bold text-purple-300 uppercase tracking-wider">
                 {category}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {categorySliders.map(({ key, label, min, max, step, icon }) => (
                   <div
                     key={key}
-                    className="bg-gradient-to-b from-white/10 to-white/5 p-2 sm:p-2.5 rounded-lg border border-white/20 hover:border-white/30 transition-all hover:scale-[1.02]"
+                    className="bg-black/20 p-3 rounded-lg border border-white/10 hover:border-purple-400/50 transition-all duration-300 hover:bg-black/30"
                   >
-                    <label className="flex items-center justify-between text-[10px] sm:text-xs text-white/90 mb-1 sm:mb-1.5">
-                      <span className="flex items-center gap-1">
-                        <span className="text-xs sm:text-sm">{icon}</span>
-                        <span className="font-medium text-[10px] sm:text-[11px]">{label}</span>
+                    <label className="flex items-center justify-between text-xs text-white/80 mb-2">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-sm">{icon}</span>
+                        <span className="font-semibold">{label}</span>
                       </span>
-                      <span className="text-white/70 font-mono text-[9px] sm:text-[10px]">{formatValue(key, filters[key])}</span>
+                      <span className="text-white/60 font-mono text-xs bg-white/5 px-1.5 py-0.5 rounded">
+                        {formatValue(key, filters[key])}
+                      </span>
                     </label>
                     <input
                       type="range"
@@ -97,7 +99,10 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
                       step={step}
                       value={filters[key]}
                       onChange={(e) => updateFilter(key, parseFloat(e.target.value))}
-                      className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
+                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
+                      style={{
+                        background: `linear-gradient(to right, #8a2be2 0%, #ff69b4 ${((filters[key] - min) / (max - min)) * 100}%, rgba(255,255,255,0.1) ${((filters[key] - min) / (max - min)) * 100}%)`
+                      }}
                     />
                   </div>
                 ))}

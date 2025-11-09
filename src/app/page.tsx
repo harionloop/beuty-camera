@@ -44,6 +44,8 @@ export default function Home() {
   const [isPresetsCollapsed, setIsPresetsCollapsed] = useState(false);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
   const [previewWidth, setPreviewWidth] = useState(70); // Initial width percentage
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (isScreenTorchOn) {
@@ -88,22 +90,16 @@ export default function Home() {
       if (flashRef.current) {
         gsap.fromTo(flashRef.current, 
           { opacity: 0 },
-          { opacity: 1, duration: 0.1, yoyo: true, repeat: 1 }
+          { opacity: 1, duration: 0.05, yoyo: true, repeat: 1 }
         );
       }
 
-      // Canvas shake animation
+      // Canvas shake and zoom animation
       if (canvasContainerRef.current) {
-        gsap.to(canvasContainerRef.current, {
-          x: -5,
-          duration: 0.05,
-          yoyo: true,
-          repeat: 5,
-          ease: 'power2.inOut',
-          onComplete: () => {
-            gsap.set(canvasContainerRef.current, { x: 0 });
-          }
-        });
+        gsap.timeline()
+          .to(canvasContainerRef.current, { scale: 1.02, duration: 0.1 })
+          .to(canvasContainerRef.current, { x: -5, duration: 0.05, yoyo: true, repeat: 3 })
+          .to(canvasContainerRef.current, { scale: 1, x: 0, duration: 0.2 });
       }
 
       // Capture with mirror option
@@ -123,13 +119,14 @@ export default function Home() {
       
       // Show success notification
       toast.success('Image captured!', {
-        icon: '📸',
-        duration: 2000,
+        icon: '✨',
+        duration: 2500,
         style: {
-          background: 'rgba(124, 92, 255, 0.9)',
+          background: 'linear-gradient(45deg, var(--accent), var(--accent2))',
           color: '#fff',
-          borderRadius: '10px',
-          padding: '12px 20px',
+          borderRadius: '12px',
+          padding: '14px 22px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
         },
       });
 
@@ -171,15 +168,16 @@ export default function Home() {
     }
   }, [capture, filters, isActive, mirrorImage]);
 
-  const handlePreset = (preset: FilterSettings) => {
-    // Animate filter change
-    gsap.to({}, {
-      duration: 0.3,
-      onComplete: () => {
-        setFilters(preset);
+  const handlePreset = (preset: FilterSettings, presetName: string) => {
+    gsap.to(filters, {
+      ...preset,
+      duration: 0.5,
+      ease: 'power3.inOut',
+      onUpdate: () => {
+        setFilters({ ...filters });
       }
     });
-    setFilters(preset);
+    setActivePreset(presetName);
   };
 
   useEffect(() => {
@@ -224,69 +222,64 @@ export default function Home() {
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
         type={confirmModal.type}
       />
-      <div className="h-screen w-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#0a0e1a] via-[#1a1f35] to-[#252b45] text-[#f0f4f8] overflow-hidden relative">
-        {/* Animated background gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/10 via-transparent to-[#ec4899]/10 animate-pulse pointer-events-none"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(168,85,247,0.15),transparent_50%)] pointer-events-none"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(236,72,153,0.15),transparent_50%)] pointer-events-none"></div>
+      <div className="h-screen w-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-hidden relative">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-pink-500/10 animate-pulse pointer-events-none"></div>
+        <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_30%_20%,rgba(138,43,226,0.2),transparent_60%)] pointer-events-none"></div>
+        <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_70%_80%,rgba(255,105,180,0.2),transparent_60%)] pointer-events-none"></div>
         
         {/* Left Section - Camera & Filters */}
         <div
-          className="w-full flex flex-col p-3 sm:p-4 lg:p-6 gap-2 sm:gap-3 lg:gap-4 overflow-hidden relative z-10"
+          className="w-full flex flex-col p-4 lg:p-6 gap-4 overflow-hidden relative z-10"
           style={{ width: `${previewWidth}%` }}
         >
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#f59e0b] rounded-xl blur-lg opacity-50 animate-pulse"></div>
-                <div className="relative bg-gradient-to-br from-[#a855f7] via-[#ec4899] to-[#f59e0b] p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl">
-                  <span className="text-lg sm:text-2xl">📷</span>
+            <div className="flex items-center gap-3">
+              <div className="relative animated-border rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-500 to-cyan-400 rounded-2xl blur-lg opacity-60 animate-pulse"></div>
+                <div className="relative bg-gradient-to-br from-purple-600 via-pink-500 to-cyan-400 p-3 rounded-xl">
+                  <span className="text-3xl drop-shadow-lg">📸</span>
                 </div>
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#f59e0b] bg-clip-text text-transparent drop-shadow-lg">
+              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-md">
                 BeautyCam
               </h1>
             </div>
-            <div className="text-[10px] sm:text-xs text-white/70 bg-gradient-to-r from-white/10 to-white/5 px-2 sm:px-4 py-1 sm:py-1.5 rounded-full border border-white/20 backdrop-blur-sm shadow-lg">
-              <span className="hidden sm:inline">Local-only · Camera required</span>
-              <span className="sm:hidden">Camera required</span>
+            <div className="text-xs text-white/60 bg-black/20 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm shadow-lg">
+              <span>Local-First & Privacy-Focused</span>
             </div>
           </div>
 
-          {/* Camera Viewer - Takes most of the space */}
+          {/* Camera Viewer */}
           <div 
             ref={canvasContainerRef}
-            className="flex-1 relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0f1419]/90 via-[#1a1f35]/80 to-[#0f1419]/90 border-2 border-white/20 shadow-2xl min-h-0 group backdrop-blur-sm"
+            className="flex-1 relative rounded-3xl overflow-hidden bg-black/30 border-2 border-white/10 shadow-2xl min-h-0 group backdrop-blur-sm animated-border"
             style={{
-              boxShadow: '0 20px 60px rgba(168, 85, 247, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 25px 50px -12px rgba(138, 43, 226, 0.25)',
             }}
           >
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isActive ? 'opacity-0' : 'opacity-100'}`}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isActive ? 'opacity-0' : 'opacity-100'}`}
             />
             <canvas
               ref={canvasRef}
-              className="absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-opacity duration-300"
+              className="absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-opacity duration-500"
               style={{ display: isActive ? 'block' : 'none', opacity: isActive ? 1 : 0 }}
             />
             
-            {/* Flash effect */}
-            <div
-              ref={flashRef}
-              className="absolute inset-0 bg-white pointer-events-none opacity-0"
-            />
+            <div ref={flashRef} className="absolute inset-0 bg-white pointer-events-none opacity-0" />
 
             {!isActive && (
-              <div className="absolute inset-0 flex items-center justify-center text-white/50 text-center p-5">
+              <div className="absolute inset-0 flex items-center justify-center text-white/60 text-center p-5">
                 <div className="animate-pulse">
-                  <div className="text-3xl mb-3">📷</div>
-                  <div className="text-lg mb-2 font-semibold">Camera not started</div>
-                  <div className="text-sm text-white/60">
-                    Grant camera permission and click <strong className="text-white/80">Start Camera</strong>
+                  <div className="text-4xl mb-4">📷</div>
+                  <div className="text-xl mb-2 font-semibold">Camera is Off</div>
+                  <div className="text-md text-white/70">
+                    Click <strong className="text-white/90">Start Camera</strong> to begin
                   </div>
                 </div>
               </div>
@@ -294,89 +287,71 @@ export default function Home() {
           </div>
 
           {/* Controls */}
-          <div className="flex gap-2 sm:gap-3 flex-wrap items-center">
+          <div className="flex gap-3 flex-wrap items-center">
             <button
               onClick={handleStartCamera}
               disabled={isActive}
-              className="px-3 sm:px-6 py-2 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-base font-semibold bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#a855f7] bg-size-200 bg-pos-0 hover:bg-pos-100 text-white border-none shadow-lg shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-purple-500/60 hover:scale-105 active:scale-95 transition-all duration-300 relative overflow-hidden group"
+              className="btn-glow pulse-on-hover px-6 py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-green-400 to-cyan-500 text-white border-none shadow-lg shadow-cyan-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-cyan-500/50"
             >
-              <span className="relative z-10 flex items-center gap-1 sm:gap-2">
-                <span>▶</span>
-                <span className="hidden sm:inline">Start Camera</span>
-                <span className="sm:hidden">Start</span>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              ▶ Start
             </button>
             <button
               onClick={stopCamera}
               disabled={!isActive}
-              className="px-3 sm:px-6 py-2 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-base font-semibold bg-gradient-to-br from-white/10 to-white/5 text-white/90 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/15 hover:border-white/30 hover:scale-105 active:scale-95 transition-all duration-200 backdrop-blur-sm shadow-lg"
+              className="btn-glow px-6 py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-red-500 to-orange-500 text-white border-none shadow-lg shadow-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-orange-500/50"
             >
-              <span className="hidden sm:inline">⏹ Stop Camera</span>
-              <span className="sm:hidden">⏹ Stop</span>
+              ⏹ Stop
             </button>
             <button
               onClick={handleCapture}
               disabled={!isActive}
-              className="px-4 sm:px-7 py-2 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-base font-semibold bg-gradient-to-r from-[#f59e0b] via-[#ec4899] to-[#f59e0b] bg-size-200 bg-pos-0 hover:bg-pos-100 text-white border-none shadow-lg shadow-orange-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-orange-500/60 hover:scale-105 active:scale-95 transition-all duration-300 relative overflow-hidden group"
+              className="btn-glow pulse-on-hover px-7 py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none shadow-lg shadow-pink-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-pink-500/50"
             >
-              <span className="relative z-10 flex items-center gap-1 sm:gap-2">
-                <span>📸</span>
-                <span className="hidden sm:inline">Capture</span>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              📸 Capture
             </button>
 
-            {/* Mirror Toggle */}
-            <label className="flex gap-1.5 sm:gap-2 items-center ml-auto bg-gradient-to-br from-white/10 to-white/5 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl border border-white/20 hover:border-white/30 hover:bg-white/15 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-lg">
+            <label className="flex gap-2 items-center ml-auto bg-black/20 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-lg">
               <input
                 type="checkbox"
                 checked={mirrorImage}
                 onChange={(e) => setMirrorImage(e.target.checked)}
-                className="cursor-pointer accent-purple-500 w-3 h-3 sm:w-4 sm:h-4"
+                className="cursor-pointer accent-purple-500 w-4 h-4"
               />
-              <span className="text-[10px] sm:text-xs font-medium">
-                <span className="hidden sm:inline">🪞 Mirror Image</span>
-                <span className="sm:hidden">🪞</span>
-              </span>
+              <span className="text-sm font-medium">🪞 Mirror</span>
             </label>
 
-            {/* Torch Toggle */}
             <button
               onClick={toggleScreenTorch}
               disabled={!isActive}
-              className={`px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl border transition-all duration-200 backdrop-blur-sm shadow-lg ${
+              className={`btn-glow px-4 py-2.5 rounded-xl border transition-all duration-300 backdrop-blur-sm shadow-lg ${
                 isScreenTorchOn
-                  ? 'bg-yellow-400/80 border-yellow-300/90 text-black'
-                  : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white/90 hover:border-white/30 hover:bg-white/15'
+                  ? 'bg-yellow-400/90 border-yellow-300 text-black font-semibold'
+                  : 'bg-black/20 border-white/10 text-white/80 hover:border-white/20'
               }`}
             >
-              <span className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5">
-                <span className="text-sm">{isScreenTorchOn ? '💡' : '🔦'}</span>
-                <span className="hidden sm:inline">{isScreenTorchOn ? 'Torch ON' : 'Torch OFF'}</span>
-              </span>
+              <span className="text-lg">{isScreenTorchOn ? '💡' : '🔦'}</span>
             </button>
           </div>
 
-          {/* Presets */}
-          <div className="flex flex-col gap-2">
+          {/* Presets & Filters Toggle */}
+          <div className="flex gap-4">
             <button
               onClick={() => setIsPresetsCollapsed(!isPresetsCollapsed)}
-              className="text-left text-sm font-semibold text-white/80 hover:text-white"
+              className="text-left text-sm font-semibold text-white/70 hover:text-white transition-colors"
             >
               {isPresetsCollapsed ? '▶ Show Presets' : '▼ Hide Presets'}
             </button>
-            {!isPresetsCollapsed && <PresetCategories onPresetSelect={handlePreset} />}
-          </div>
-
-          {/* Filters Section - Scrollable */}
-          <div className="flex-1 min-h-0 overflow-hidden">
             <button
               onClick={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
-              className="text-left text-sm font-semibold text-white/80 hover:text-white mb-2"
+              className="text-left text-sm font-semibold text-white/70 hover:text-white transition-colors"
             >
               {isFiltersCollapsed ? '▶ Show Filters' : '▼ Hide Filters'}
             </button>
+          </div>
+          
+          {/* Collapsible Sections */}
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+            {!isPresetsCollapsed && <PresetCategories onPresetSelect={handlePreset} activePreset={activePreset} />}
             {!isFiltersCollapsed && <FilterSliders filters={filters} onFilterChange={setFilters} />}
           </div>
         </div>
@@ -384,15 +359,17 @@ export default function Home() {
         {/* Resizer Handle */}
         <div
           onMouseDown={handleMouseDown}
-          className="w-2 cursor-col-resize bg-white/10 hover:bg-white/20 transition-colors duration-200"
-        />
+          className="w-2.5 cursor-col-resize bg-white/5 hover:bg-white/10 transition-colors duration-300 group"
+        >
+          <div className="h-full w-0.5 bg-gradient-to-b from-purple-500 via-pink-500 to-cyan-500 mx-auto opacity-50 group-hover:opacity-100 transition-opacity"></div>
+        </div>
 
         {/* Right Section - Gallery */}
         <div
-          className="w-full border-t lg:border-t-0 lg:border-l border-white/20 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-3 sm:p-4 overflow-hidden flex flex-col backdrop-blur-md shadow-2xl relative z-10 h-[40vh] lg:h-auto"
+          className="w-full border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 overflow-hidden flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 h-[40vh] lg:h-auto"
           style={{ width: `${100 - previewWidth}%` }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 via-transparent to-[#ec4899]/5 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none"></div>
           <div className="relative z-10 h-full">
             <Gallery onShowConfirm={showConfirm} />
           </div>
