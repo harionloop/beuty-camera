@@ -107,3 +107,30 @@ body {
 .bg-pos-100 {
   background-position: 100% 50%;
 }
+
+.screen-torch-effect::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 220, 0.8) 0%,
+    rgba(255, 255, 220, 0) 70%
+  );
+  filter: blur(100px);
+  z-index: 9999;
+  pointer-events: none;
+  animation: torch-flicker 0.2s infinite alternate;
+}
+
+@keyframes torch-flicker {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 0.9;
+  }
+}

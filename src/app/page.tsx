@@ -10,9 +10,21 @@ import { savePhoto, updatePhoto, PhotoMeta } from '@/lib/indexeddb';
 import { gsap } from 'gsap';
 import { toast } from 'react-hot-toast';
 
-
 export default function Home() {
-  const { videoRef, canvasRef, isActive, filters, setFilters, startCamera, stopCamera, capture, isTorchOn, toggleTorch } = useCamera();
+  const {
+    videoRef,
+    canvasRef,
+    isActive,
+    filters,
+    setFilters,
+    startCamera,
+    stopCamera,
+    capture,
+    isTorchOn,
+    toggleTorch,
+    isScreenTorchOn,
+    toggleScreenTorch,
+  } = useCamera();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const [mirrorImage, setMirrorImage] = useState(true);
@@ -28,6 +40,18 @@ export default function Home() {
     message: '',
     onConfirm: () => {},
   });
+
+  const [isPresetsCollapsed, setIsPresetsCollapsed] = useState(false);
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
+  const [previewWidth, setPreviewWidth] = useState(70); // Initial width percentage
+
+  useEffect(() => {
+    if (isScreenTorchOn) {
+      document.body.classList.add('screen-torch-effect');
+    } else {
+      document.body.classList.remove('screen-torch-effect');
+    }
+  }, [isScreenTorchOn]);
 
   const showConfirm = (
     title: string,
@@ -169,6 +193,24 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleCapture]);
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const startX = e.clientX;
+    const startWidth = previewWidth;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = startWidth + ((e.clientX - startX) / window.innerWidth) * 100;
+      setPreviewWidth(Math.max(20, Math.min(80, newWidth))); // Clamp width
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <>
       <ConfirmModal
@@ -187,8 +229,12 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/10 via-transparent to-[#ec4899]/10 animate-pulse pointer-events-none"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(168,85,247,0.15),transparent_50%)] pointer-events-none"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(236,72,153,0.15),transparent_50%)] pointer-events-none"></div>
-        {/* Left Section - 70% - Camera & Filters */}
-        <div className="w-full lg:w-[70%] flex flex-col p-3 sm:p-4 lg:p-6 gap-2 sm:gap-3 lg:gap-4 overflow-hidden relative z-10">
+        
+        {/* Left Section - Camera & Filters */}
+        <div
+          className="w-full flex flex-col p-3 sm:p-4 lg:p-6 gap-2 sm:gap-3 lg:gap-4 overflow-hidden relative z-10"
+          style={{ width: `${previewWidth}%` }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -297,34 +343,55 @@ export default function Home() {
 
             {/* Torch Toggle */}
             <button
-              onClick={toggleTorch}
+              onClick={toggleScreenTorch}
               disabled={!isActive}
               className={`px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl border transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                isTorchOn
+                isScreenTorchOn
                   ? 'bg-yellow-400/80 border-yellow-300/90 text-black'
                   : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white/90 hover:border-white/30 hover:bg-white/15'
               }`}
             >
               <span className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5">
-                <span className="text-sm">{isTorchOn ? '💡' : '🔦'}</span>
-                <span className="hidden sm:inline">{isTorchOn ? 'Torch ON' : 'Torch OFF'}</span>
+                <span className="text-sm">{isScreenTorchOn ? '💡' : '🔦'}</span>
+                <span className="hidden sm:inline">{isScreenTorchOn ? 'Torch ON' : 'Torch OFF'}</span>
               </span>
             </button>
           </div>
 
           {/* Presets */}
           <div className="flex flex-col gap-2">
-            <PresetCategories onPresetSelect={handlePreset} />
+            <button
+              onClick={() => setIsPresetsCollapsed(!isPresetsCollapsed)}
+              className="text-left text-sm font-semibold text-white/80 hover:text-white"
+            >
+              {isPresetsCollapsed ? '▶ Show Presets' : '▼ Hide Presets'}
+            </button>
+            {!isPresetsCollapsed && <PresetCategories onPresetSelect={handlePreset} />}
           </div>
 
           {/* Filters Section - Scrollable */}
           <div className="flex-1 min-h-0 overflow-hidden">
-            <FilterSliders filters={filters} onFilterChange={setFilters} />
+            <button
+              onClick={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
+              className="text-left text-sm font-semibold text-white/80 hover:text-white mb-2"
+            >
+              {isFiltersCollapsed ? '▶ Show Filters' : '▼ Hide Filters'}
+            </button>
+            {!isFiltersCollapsed && <FilterSliders filters={filters} onFilterChange={setFilters} />}
           </div>
         </div>
 
-        {/* Right Section - 30% - Gallery */}
-        <div className="w-full lg:w-[30%] border-t lg:border-t-0 lg:border-l border-white/20 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-3 sm:p-4 overflow-hidden flex flex-col backdrop-blur-md shadow-2xl relative z-10 h-[40vh] lg:h-auto">
+        {/* Resizer Handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          className="w-2 cursor-col-resize bg-white/10 hover:bg-white/20 transition-colors duration-200"
+        />
+
+        {/* Right Section - Gallery */}
+        <div
+          className="w-full border-t lg:border-t-0 lg:border-l border-white/20 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-3 sm:p-4 overflow-hidden flex flex-col backdrop-blur-md shadow-2xl relative z-10 h-[40vh] lg:h-auto"
+          style={{ width: `${100 - previewWidth}%` }}
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 via-transparent to-[#ec4899]/5 pointer-events-none"></div>
           <div className="relative z-10 h-full">
             <Gallery onShowConfirm={showConfirm} />

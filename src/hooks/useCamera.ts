@@ -35,6 +35,7 @@ export function useCamera() {
 
   const [isActive, setIsActive] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const [isScreenTorchOn, setIsScreenTorchOn] = useState(false);
   const [filters, setFilters] = useState<FilterSettings>({
     brightness: 1,
     contrast: 1,
@@ -97,6 +98,10 @@ export function useCamera() {
       }
     }
   }, [isTorchOn]);
+
+  const toggleScreenTorch = useCallback(() => {
+    setIsScreenTorchOn(prev => !prev);
+  }, []);
 
   const startCamera = useCallback(async () => {
     try {
@@ -351,5 +356,7 @@ export function useCamera() {
     capture,
     isTorchOn,
     toggleTorch,
+    isScreenTorchOn,
+    toggleScreenTorch,
   };
 }
