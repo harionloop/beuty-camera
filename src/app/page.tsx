@@ -222,7 +222,10 @@ export default function Home() {
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
         type={confirmModal.type}
       />
-      <div className="h-screen w-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-hidden relative">
+      <div 
+        className="h-screen w-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-hidden relative main-container"
+        style={{ '--preview-width': `${previewWidth}%` } as React.CSSProperties}
+      >
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-pink-500/10 animate-pulse pointer-events-none"></div>
         <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_30%_20%,rgba(138,43,226,0.2),transparent_60%)] pointer-events-none"></div>
@@ -230,8 +233,7 @@ export default function Home() {
         
         {/* Left Section - Camera & Filters */}
         <div
-          className="w-full flex flex-col p-4 lg:p-6 gap-4 overflow-hidden relative z-10"
-          style={{ width: `${previewWidth}%` }}
+          className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 overflow-hidden relative z-10 main-section"
         >
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -246,7 +248,7 @@ export default function Home() {
                 BeautyCam
               </h1>
             </div>
-            <div className="text-xs text-white/60 bg-black/20 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm shadow-lg">
+            <div className="text-xs text-white/60 bg-black/20 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm shadow-lg header-info">
               <span>Local-First & Privacy-Focused</span>
             </div>
           </div>
@@ -287,7 +289,7 @@ export default function Home() {
           </div>
 
           {/* Controls */}
-          <div className="flex gap-3 flex-wrap items-center">
+          <div className="flex gap-3 flex-wrap items-center controls-container">
             <button
               onClick={handleStartCamera}
               disabled={isActive}
@@ -310,7 +312,7 @@ export default function Home() {
               📸 Capture
             </button>
 
-            <label className="flex gap-2 items-center ml-auto bg-black/20 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-lg">
+            <label className="flex gap-2 items-center ml-auto bg-black/20 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-lg mirror-label">
               <input
                 type="checkbox"
                 checked={mirrorImage}
@@ -359,15 +361,14 @@ export default function Home() {
         {/* Resizer Handle */}
         <div
           onMouseDown={handleMouseDown}
-          className="w-2.5 cursor-col-resize bg-white/5 hover:bg-white/10 transition-colors duration-300 group"
+          className="w-2.5 cursor-col-resize bg-white/5 hover:bg-white/10 transition-colors duration-300 group resizer"
         >
           <div className="h-full w-0.5 bg-gradient-to-b from-purple-500 via-pink-500 to-cyan-500 mx-auto opacity-50 group-hover:opacity-100 transition-opacity"></div>
         </div>
 
         {/* Right Section - Gallery */}
         <div
-          className="w-full border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 overflow-hidden flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 h-[40vh] lg:h-auto"
-          style={{ width: `${100 - previewWidth}%` }}
+          className="w-full lg:w-[calc(100%_-_var(--preview-width))] border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 overflow-hidden flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 gallery-section"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none"></div>
           <div className="relative z-10 h-full">
