@@ -223,7 +223,7 @@ export default function Home() {
         type={confirmModal.type}
       />
       <div 
-        className="h-screen w-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-hidden relative main-container"
+        className="min-h-dvh w-screen flex flex-col lg:flex-row lg:h-dvh bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-x-hidden overflow-y-auto lg:overflow-hidden relative main-container"
         style={{ '--preview-width': `${previewWidth}%` } as React.CSSProperties}
       >
         {/* Animated background elements */}
@@ -233,7 +233,7 @@ export default function Home() {
         
         {/* Left Section - Camera & Filters */}
         <div
-          className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 overflow-hidden relative z-10 main-section"
+          className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0"
         >
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -256,7 +256,7 @@ export default function Home() {
           {/* Camera Viewer */}
           <div 
             ref={canvasContainerRef}
-            className="flex-1 relative rounded-3xl overflow-hidden bg-black/30 border-2 border-white/10 shadow-2xl min-h-0 group backdrop-blur-sm animated-border"
+            className="camera-preview relative w-full shrink-0 aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-3xl overflow-hidden bg-black/30 border-2 border-white/10 shadow-2xl group backdrop-blur-sm animated-border"
             style={{
               boxShadow: '0 25px 50px -12px rgba(138, 43, 226, 0.25)',
             }}
@@ -352,7 +352,7 @@ export default function Home() {
           </div>
           
           {/* Collapsible Sections */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+          <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar pr-2 space-y-6">
             {!isPresetsCollapsed && <PresetCategories onPresetSelect={handlePreset} activePreset={activePreset} />}
             {!isFiltersCollapsed && <FilterSliders filters={filters} onFilterChange={setFilters} />}
           </div>
@@ -361,14 +361,14 @@ export default function Home() {
         {/* Resizer Handle */}
         <div
           onMouseDown={handleMouseDown}
-          className="w-2.5 cursor-col-resize bg-white/5 hover:bg-white/10 transition-colors duration-300 group resizer"
+          className="w-2.5 cursor-col-resize bg-white/5 hover:bg-white/10 transition-colors duration-300 group resizer hidden lg:flex"
         >
           <div className="h-full w-0.5 bg-gradient-to-b from-purple-500 via-pink-500 to-cyan-500 mx-auto opacity-50 group-hover:opacity-100 transition-opacity"></div>
         </div>
 
         {/* Right Section - Gallery */}
         <div
-          className="w-full lg:w-[calc(100%_-_var(--preview-width))] border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 overflow-hidden flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 gallery-section"
+          className="w-full lg:w-[calc(100%_-_var(--preview-width))] border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 gallery-section shrink-0 min-h-[50vh] lg:flex-1 lg:min-h-0"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none"></div>
           <div className="relative z-10 h-full">

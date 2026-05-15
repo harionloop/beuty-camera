@@ -241,30 +241,30 @@ body {
 }
 
 /* Responsive Design */
-@media (max-width: 1280px) {
+@media (max-width: 1023px) {
   html, body {
-    overflow-y: auto; /* Allow scrolling on medium screens */
+    overflow-y: auto;
   }
-  .main-container {
-    flex-direction: column;
-    height: auto; /* Allow container to grow */
-    min-height: 100vh; /* Ensure it takes at least the full viewport height */
-  }
+
   .main-section {
     width: 100% !important;
-    height: auto; /* Let content define height */
-    overflow-y: auto; /* Allow scrolling within the main section */
+    height: auto;
+    overflow: visible;
     border-left: none;
     border-bottom: 2px solid var(--card);
   }
+
   .gallery-section {
     width: 100% !important;
-    height: auto; /* Let content define height */
+    height: auto;
     border-left: none;
-    border-top: none;
   }
-  .resizer {
-    display: none;
+
+  .camera-preview {
+    flex: none !important;
+    width: 100%;
+    min-height: 220px;
+    aspect-ratio: 4 / 3;
   }
 }
 
