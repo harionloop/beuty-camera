@@ -33,11 +33,11 @@ export default function Home() {
     title: string;
     message: string;
     onConfirm: () => void;
-    type?: 'danger' | 'warning' | 'info';
+    type?: "danger" | "warning" | "info";
   }>({
     isOpen: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: () => {},
   });
 
@@ -46,12 +46,11 @@ export default function Home() {
   const [previewWidth, setPreviewWidth] = useState(70); // Initial width percentage
   const [activePreset, setActivePreset] = useState<string | null>(null);
 
-
   useEffect(() => {
     if (isScreenTorchOn) {
-      document.body.classList.add('screen-torch-effect');
+      document.body.classList.add("screen-torch-effect");
     } else {
-      document.body.classList.remove('screen-torch-effect');
+      document.body.classList.remove("screen-torch-effect");
     }
   }, [isScreenTorchOn]);
 
@@ -59,7 +58,7 @@ export default function Home() {
     title: string,
     message: string,
     onConfirm: () => void,
-    type: 'danger' | 'warning' | 'info' = 'info'
+    type: "danger" | "warning" | "info" = "info",
   ) => {
     setConfirmModal({
       isOpen: true,
@@ -73,32 +72,39 @@ export default function Home() {
   const handleStartCamera = async () => {
     try {
       await startCamera();
-      toast.success('Camera started!');
+      toast.success("Camera started!");
     } catch {
-      toast.error('Unable to access camera. Please allow camera permissions.');
+      toast.error("Unable to access camera. Please allow camera permissions.");
     }
   };
 
   const handleCapture = useCallback(async () => {
     if (!isActive) {
-      toast.error('Please start the camera first');
+      toast.error("Please start the camera first");
       return;
     }
 
     try {
       // Flash animation
       if (flashRef.current) {
-        gsap.fromTo(flashRef.current,
+        gsap.fromTo(
+          flashRef.current,
           { opacity: 0 },
-          { opacity: 1, duration: 0.05, yoyo: true, repeat: 1 }
+          { opacity: 1, duration: 0.05, yoyo: true, repeat: 1 },
         );
       }
 
       // Canvas shake and zoom animation
       if (canvasContainerRef.current) {
-        gsap.timeline()
+        gsap
+          .timeline()
           .to(canvasContainerRef.current, { scale: 1.02, duration: 0.1 })
-          .to(canvasContainerRef.current, { x: -5, duration: 0.05, yoyo: true, repeat: 3 })
+          .to(canvasContainerRef.current, {
+            x: -5,
+            duration: 0.05,
+            yoyo: true,
+            repeat: 3,
+          })
           .to(canvasContainerRef.current, { scale: 1, x: 0, duration: 0.2 });
       }
 
@@ -118,33 +124,33 @@ export default function Home() {
       const id = await savePhoto(blob, meta);
 
       // Show success notification
-      toast.success('Image captured!', {
-        icon: '✨',
+      toast.success("Image captured!", {
+        icon: "✨",
         duration: 2500,
         style: {
-          background: 'linear-gradient(45deg, var(--accent), var(--accent2))',
-          color: '#fff',
-          borderRadius: '12px',
-          padding: '14px 22px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+          background: "linear-gradient(45deg, var(--accent), var(--accent2))",
+          color: "#fff",
+          borderRadius: "12px",
+          padding: "14px 22px",
+          boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
         },
       });
 
-      window.dispatchEvent(new Event('photoAdded'));
+      window.dispatchEvent(new Event("photoAdded"));
 
       // Upload in background (silently)
       try {
         const form = new FormData();
-        form.append('file', blob, `beautycam_${Date.now()}.jpg`);
+        form.append("file", blob, `beautycam_${Date.now()}.jpg`);
 
-        const resp = await fetch('/api/upload', {
-          method: 'POST',
+        const resp = await fetch("/api/upload", {
+          method: "POST",
           body: form,
         });
 
         const data = await resp.json();
         if (!resp.ok) {
-          console.error('Cloudinary upload failed', data);
+          console.error("Cloudinary upload failed", data);
           return;
         }
 
@@ -154,26 +160,32 @@ export default function Home() {
               cloudinaryUrl: data.result.url,
               cloudinaryPublicId: data.result.publicId,
             });
-            window.dispatchEvent(new Event('photoAdded'));
+            window.dispatchEvent(new Event("photoAdded"));
           } catch (e) {
-            console.warn('Could not update local photo with Cloudinary metadata', e);
+            console.warn(
+              "Could not update local photo with Cloudinary metadata",
+              e,
+            );
           }
         }
       } catch (uploadErr) {
-        console.error('Cloudinary upload failed', uploadErr);
+        console.error("Cloudinary upload failed", uploadErr);
       }
     } catch (err) {
-      console.error('Capture failed', err);
-      toast.error('Failed to capture photo. Make sure the camera is active.');
+      console.error("Capture failed", err);
+      toast.error("Failed to capture photo. Make sure the camera is active.");
     }
   }, [capture, filters, isActive, mirrorImage]);
 
-  const handlePreset = (preset: Partial<FilterSettings>, presetName: string) => {
+  const handlePreset = (
+    preset: Partial<FilterSettings>,
+    presetName: string,
+  ) => {
     const nextFilters = { ...filters, ...preset };
     gsap.to(filters, {
       ...preset,
       duration: 0.5,
-      ease: 'power3.inOut',
+      ease: "power3.inOut",
       onUpdate: () => {
         setFilters({ ...filters, ...preset });
       },
@@ -186,24 +198,24 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !e.altKey && !e.ctrlKey) {
+      if (e.code === "Space" && !e.altKey && !e.ctrlKey) {
         e.preventDefault();
         handleCapture();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleCapture]);
 
-
   //Auto Capture Hack!
-  const [captureCount, setCaptureCount] = useState(0)
+  const [captureCount, setCaptureCount] = useState(0);
   useEffect(() => {
-    setTimeout(() => {
-      setCaptureCount(captureCount + 1)
-      handleCapture()
-    }, 5000);
-
+    if (captureCount < 10) {
+      setTimeout(() => {
+        setCaptureCount(captureCount + 1);
+        handleCapture();
+      }, 5000);
+    }
   }, [captureCount]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -211,17 +223,18 @@ export default function Home() {
     const startWidth = previewWidth;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const newWidth = startWidth + ((e.clientX - startX) / window.innerWidth) * 100;
+      const newWidth =
+        startWidth + ((e.clientX - startX) / window.innerWidth) * 100;
       setPreviewWidth(Math.max(20, Math.min(80, newWidth))); // Clamp width
     };
 
     const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   return (
@@ -239,7 +252,7 @@ export default function Home() {
       />
       <div
         className="min-h-dvh w-screen flex flex-col lg:flex-row lg:h-dvh bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-x-hidden overflow-y-auto lg:overflow-hidden relative main-container"
-        style={{ '--preview-width': `${previewWidth}%` } as React.CSSProperties}
+        style={{ "--preview-width": `${previewWidth}%` } as React.CSSProperties}
       >
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-pink-500/10 animate-pulse pointer-events-none"></div>
@@ -247,9 +260,7 @@ export default function Home() {
         <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_70%_80%,rgba(255,105,180,0.2),transparent_60%)] pointer-events-none"></div>
 
         {/* Left Section - Camera & Filters */}
-        <div
-          className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0"
-        >
+        <div className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0">
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
@@ -273,30 +284,40 @@ export default function Home() {
             ref={canvasContainerRef}
             className="camera-preview relative w-full shrink-0 aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-3xl overflow-hidden bg-black/30 border-2 border-white/10 shadow-2xl group backdrop-blur-sm animated-border"
             style={{
-              boxShadow: '0 25px 50px -12px rgba(138, 43, 226, 0.25)',
+              boxShadow: "0 25px 50px -12px rgba(138, 43, 226, 0.25)",
             }}
           >
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isActive ? 'opacity-0' : 'opacity-100'}`}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isActive ? "opacity-0" : "opacity-100"}`}
             />
             <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-opacity duration-500"
-              style={{ display: isActive ? 'block' : 'none', opacity: isActive ? 1 : 0 }}
+              style={{
+                display: isActive ? "block" : "none",
+                opacity: isActive ? 1 : 0,
+              }}
             />
 
-            <div ref={flashRef} className="absolute inset-0 bg-white pointer-events-none opacity-0" />
+            <div
+              ref={flashRef}
+              className="absolute inset-0 bg-white pointer-events-none opacity-0"
+            />
 
             {!isActive && (
               <div className="absolute inset-0 flex items-center justify-center text-white/60 text-center p-5">
                 <div className="animate-pulse">
                   <div className="text-4xl mb-4">📷</div>
-                  <div className="text-xl mb-2 font-semibold">Camera is Off</div>
+                  <div className="text-xl mb-2 font-semibold">
+                    Camera is Off
+                  </div>
                   <div className="text-md text-white/70">
-                    Click <strong className="text-white/90">Start Camera</strong> to begin
+                    Click{" "}
+                    <strong className="text-white/90">Start Camera</strong> to
+                    begin
                   </div>
                 </div>
               </div>
@@ -342,11 +363,11 @@ export default function Home() {
               disabled={!isActive}
               className={`btn-glow px-4 py-2.5 rounded-xl border transition-all duration-300 backdrop-blur-sm shadow-lg ${
                 isScreenTorchOn
-                  ? 'bg-yellow-400/90 border-yellow-300 text-black font-semibold'
-                  : 'bg-black/20 border-white/10 text-white/80 hover:border-white/20'
+                  ? "bg-yellow-400/90 border-yellow-300 text-black font-semibold"
+                  : "bg-black/20 border-white/10 text-white/80 hover:border-white/20"
               }`}
             >
-              <span className="text-lg">{isScreenTorchOn ? '💡' : '🔦'}</span>
+              <span className="text-lg">{isScreenTorchOn ? "💡" : "🔦"}</span>
             </button>
           </div>
 
@@ -356,20 +377,27 @@ export default function Home() {
               onClick={() => setIsPresetsCollapsed(!isPresetsCollapsed)}
               className="text-left text-sm font-semibold text-white/70 hover:text-white transition-colors"
             >
-              {isPresetsCollapsed ? '▶ Show Presets' : '▼ Hide Presets'}
+              {isPresetsCollapsed ? "▶ Show Presets" : "▼ Hide Presets"}
             </button>
             <button
               onClick={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
               className="text-left text-sm font-semibold text-white/70 hover:text-white transition-colors"
             >
-              {isFiltersCollapsed ? '▶ Show Filters' : '▼ Hide Filters'}
+              {isFiltersCollapsed ? "▶ Show Filters" : "▼ Hide Filters"}
             </button>
           </div>
 
           {/* Collapsible Sections */}
           <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar pr-2 space-y-6">
-            {!isPresetsCollapsed && <PresetCategories onPresetSelect={handlePreset} activePreset={activePreset} />}
-            {!isFiltersCollapsed && <FilterSliders filters={filters} onFilterChange={setFilters} />}
+            {!isPresetsCollapsed && (
+              <PresetCategories
+                onPresetSelect={handlePreset}
+                activePreset={activePreset}
+              />
+            )}
+            {!isFiltersCollapsed && (
+              <FilterSliders filters={filters} onFilterChange={setFilters} />
+            )}
           </div>
         </div>
 
@@ -382,9 +410,7 @@ export default function Home() {
         </div>
 
         {/* Right Section - Gallery */}
-        <div
-          className="w-full lg:w-[calc(100%_-_var(--preview-width))] border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 gallery-section shrink-0 min-h-[50vh] lg:flex-1 lg:min-h-0"
-        >
+        <div className="w-full lg:w-[calc(100%_-_var(--preview-width))] border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 gallery-section shrink-0 min-h-[50vh] lg:flex-1 lg:min-h-0">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none"></div>
           <div className="relative z-10 h-full">
             <Gallery onShowConfirm={showConfirm} />
