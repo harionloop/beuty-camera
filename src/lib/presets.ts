@@ -3,7 +3,7 @@ import { FilterSettings } from '@/hooks/useCamera';
 export interface PresetCategory {
   name: string;
   icon: string;
-  presets: Record<string, FilterSettings>;
+  presets: Record<string, Partial<FilterSettings>>;
 }
 
 export const PRESET_CATEGORIES: PresetCategory[] = [
@@ -682,9 +682,9 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
 ];
 
 // Flatten all presets for backward compatibility
-export const ALL_PRESETS: Record<string, FilterSettings> = PRESET_CATEGORIES.reduce((acc, category) => {
+export const ALL_PRESETS: Record<string, Partial<FilterSettings>> = PRESET_CATEGORIES.reduce((acc, category) => {
   Object.entries(category.presets).forEach(([key, value]) => {
     acc[key] = value;
   });
   return acc;
-}, {} as Record<string, FilterSettings>);
+}, {} as Record<string, Partial<FilterSettings>>);

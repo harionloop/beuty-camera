@@ -168,14 +168,18 @@ export default function Home() {
     }
   }, [capture, filters, isActive, mirrorImage]);
 
-  const handlePreset = (preset: FilterSettings, presetName: string) => {
+  const handlePreset = (preset: Partial<FilterSettings>, presetName: string) => {
+    const nextFilters = { ...filters, ...preset };
     gsap.to(filters, {
       ...preset,
       duration: 0.5,
       ease: 'power3.inOut',
       onUpdate: () => {
-        setFilters({ ...filters });
-      }
+        setFilters({ ...filters, ...preset });
+      },
+      onComplete: () => {
+        setFilters(nextFilters);
+      },
     });
     setActivePreset(presetName);
   };

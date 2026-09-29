@@ -27,6 +27,33 @@ export interface FilterSettings {
   grain: number;
 }
 
+type TorchCapableConstraints = MediaTrackConstraintSet & { torch?: boolean };
+
+export const DEFAULT_FILTERS: FilterSettings = {
+  brightness: 1,
+  contrast: 1,
+  saturate: 1,
+  hue: 0,
+  blur: 0,
+  scale: 1,
+  sepia: 0,
+  grayscale: 0,
+  invert: 0,
+  opacity: 1,
+  sharpen: 0,
+  exposure: 0,
+  temperature: 0,
+  tint: 0,
+  vibrance: 0,
+  shadow: 0,
+  highlight: 0,
+  gamma: 1,
+  noise: 0,
+  vignette: 0,
+  clarity: 0,
+  grain: 0,
+};
+
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,30 +63,7 @@ export function useCamera() {
   const [isActive, setIsActive] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [isScreenTorchOn, setIsScreenTorchOn] = useState(false);
-  const [filters, setFilters] = useState<FilterSettings>({
-    brightness: 1,
-    contrast: 1,
-    saturate: 1,
-    hue: 0,
-    blur: 0,
-    scale: 1,
-    sepia: 0,
-    grayscale: 0,
-    invert: 0,
-    opacity: 1,
-    sharpen: 0,
-    exposure: 0,
-    temperature: 0,
-    tint: 0,
-    vibrance: 0,
-    shadow: 0,
-    highlight: 0,
-    gamma: 1,
-    noise: 0,
-    vignette: 0,
-    clarity: 0,
-    grain: 0,
-  });
+  const [filters, setFilters] = useState<FilterSettings>(DEFAULT_FILTERS);
 
   const getFilterString = useCallback(() => {
     const { 
@@ -86,10 +90,13 @@ export function useCamera() {
   const toggleTorch = useCallback(async () => {
     if (streamRef.current) {
       const videoTrack = streamRef.current.getVideoTracks()[0];
-      if (videoTrack && 'torch' in videoTrack.getCapabilities()) {
+      const capabilities = videoTrack.getCapabilities() as MediaTrackCapabilities & {
+        torch?: boolean;
+      };
+      if (videoTrack && 'torch' in capabilities) {
         try {
           await videoTrack.applyConstraints({
-            advanced: [{ torch: !isTorchOn }],
+            advanced: [{ torch: !isTorchOn } as TorchCapableConstraints],
           });
           setIsTorchOn(!isTorchOn);
         } catch (err) {

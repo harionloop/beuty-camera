@@ -6,7 +6,7 @@ import { PRESET_CATEGORIES } from '@/lib/presets';
 import { toast } from 'react-hot-toast';
 
 interface PresetCategoriesProps {
-  onPresetSelect: (preset: FilterSettings, presetName: string) => void;
+  onPresetSelect: (preset: Partial<FilterSettings>, presetName: string) => void;
   activePreset: string | null;
 }
 
@@ -19,7 +19,7 @@ export default function PresetCategories({ onPresetSelect, activePreset }: Prese
     }
   }, []);
 
-  const handlePresetClick = (preset: FilterSettings, name: string, categoryName: string) => {
+  const handlePresetClick = (preset: Partial<FilterSettings>, name: string, categoryName: string) => {
     onPresetSelect(preset, name);
     toast.success(`${categoryName}: ${name.replace(/-/g, ' ')}`, { 
       duration: 2000,
