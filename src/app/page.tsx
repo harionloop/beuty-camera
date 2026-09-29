@@ -88,7 +88,7 @@ export default function Home() {
     try {
       // Flash animation
       if (flashRef.current) {
-        gsap.fromTo(flashRef.current, 
+        gsap.fromTo(flashRef.current,
           { opacity: 0 },
           { opacity: 1, duration: 0.05, yoyo: true, repeat: 1 }
         );
@@ -116,7 +116,7 @@ export default function Home() {
       };
 
       const id = await savePhoto(blob, meta);
-      
+
       // Show success notification
       toast.success('Image captured!', {
         icon: '✨',
@@ -195,6 +195,17 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleCapture]);
 
+
+  //Auto Capture Hack!
+  const [captureCount, setCaptureCount] = useState(0)
+  useEffect(() => {
+    setTimeout(() => {
+      setCaptureCount(captureCount + 1)
+      handleCapture()
+    }, 5000);
+
+  }, [captureCount]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     const startX = e.clientX;
     const startWidth = previewWidth;
@@ -226,7 +237,7 @@ export default function Home() {
         onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
         type={confirmModal.type}
       />
-      <div 
+      <div
         className="min-h-dvh w-screen flex flex-col lg:flex-row lg:h-dvh bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-x-hidden overflow-y-auto lg:overflow-hidden relative main-container"
         style={{ '--preview-width': `${previewWidth}%` } as React.CSSProperties}
       >
@@ -234,7 +245,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-pink-500/10 animate-pulse pointer-events-none"></div>
         <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_30%_20%,rgba(138,43,226,0.2),transparent_60%)] pointer-events-none"></div>
         <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_70%_80%,rgba(255,105,180,0.2),transparent_60%)] pointer-events-none"></div>
-        
+
         {/* Left Section - Camera & Filters */}
         <div
           className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0"
@@ -258,7 +269,7 @@ export default function Home() {
           </div>
 
           {/* Camera Viewer */}
-          <div 
+          <div
             ref={canvasContainerRef}
             className="camera-preview relative w-full shrink-0 aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-3xl overflow-hidden bg-black/30 border-2 border-white/10 shadow-2xl group backdrop-blur-sm animated-border"
             style={{
@@ -276,7 +287,7 @@ export default function Home() {
               className="absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-opacity duration-500"
               style={{ display: isActive ? 'block' : 'none', opacity: isActive ? 1 : 0 }}
             />
-            
+
             <div ref={flashRef} className="absolute inset-0 bg-white pointer-events-none opacity-0" />
 
             {!isActive && (
@@ -354,7 +365,7 @@ export default function Home() {
               {isFiltersCollapsed ? '▶ Show Filters' : '▼ Hide Filters'}
             </button>
           </div>
-          
+
           {/* Collapsible Sections */}
           <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar pr-2 space-y-6">
             {!isPresetsCollapsed && <PresetCategories onPresetSelect={handlePreset} activePreset={activePreset} />}
