@@ -1,0 +1,362 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+export interface FilterSettings {
+  brightness: number;
+  contrast: number;
+  saturate: number;
+  hue: number;
+  blur: number;
+  scale: number;
+  sepia: number;
+  grayscale: number;
+  invert: number;
+  opacity: number;
+  sharpen: number;
+  exposure: number;
+  temperature: number;
+  tint: number;
+  vibrance: number;
+  shadow: number;
+  highlight: number;
+  gamma: number;
+  noise: number;
+  vignette: number;
+  clarity: number;
+  grain: number;
+}
+
+export function useCamera() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  const [isActive, setIsActive] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
+  const [isScreenTorchOn, setIsScreenTorchOn] = useState(false);
+  const [filters, setFilters] = useState<FilterSettings>({
+    brightness: 1,
+    contrast: 1,
+    saturate: 1,
+    hue: 0,
+    blur: 0,
+    scale: 1,
+    sepia: 0,
+    grayscale: 0,
+    invert: 0,
+    opacity: 1,
+    sharpen: 0,
+    exposure: 0,
+    temperature: 0,
+    tint: 0,
+    vibrance: 0,
+    shadow: 0,
+    highlight: 0,
+    gamma: 1,
+    noise: 0,
+    vignette: 0,
+    clarity: 0,
+    grain: 0,
+  });
+
+  const getFilterString = useCallback(() => {
+    const { 
+      brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity,
+      sharpen, exposure, temperature, tint, vibrance, shadow, highlight, gamma
+    } = filters;
+    
+    // CSS filter string construction
+    const filtersArray = [
+      `brightness(${brightness})`,
+      `contrast(${contrast})`,
+      `saturate(${saturate})`,
+      `hue-rotate(${hue}deg)`,
+      `blur(${blur}px)`,
+      `sepia(${sepia}%)`,
+      `grayscale(${grayscale}%)`,
+      `invert(${invert}%)`,
+      `opacity(${opacity})`,
+    ];
+    
+    return filtersArray.join(' ');
+  }, [filters]);
+
+  const toggleTorch = useCallback(async () => {
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack && 'torch' in videoTrack.getCapabilities()) {
+        try {
+          await videoTrack.applyConstraints({
+            advanced: [{ torch: !isTorchOn }],
+          });
+          setIsTorchOn(!isTorchOn);
+        } catch (err) {
+          console.error('Failed to toggle torch', err);
+        }
+      }
+    }
+  }, [isTorchOn]);
+
+  const toggleScreenTorch = useCallback(() => {
+    setIsScreenTorchOn(prev => !prev);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setIsActive(true);
+      }
+    } catch (err) {
+      console.error('Camera start failed', err);
+      throw err;
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+    setIsActive(false);
+    setIsTorchOn(false);
+    stopPreviewLoop();
+  }, []);
+
+  const drawToCanvas = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Only set canvas dimensions once when video metadata is loaded, or if they changed
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+    if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+    }
+
+    const { scale, vignette, clarity, grain } = filters;
+    const srcW = videoWidth;
+    const srcH = videoHeight;
+    const drawW = Math.round(srcW / scale);
+    const drawH = Math.round(srcH / scale);
+    const sx = Math.max(0, Math.round((srcW - drawW) / 2));
+    const sy = Math.max(0, Math.round((srcH - drawH) / 2));
+
+    ctx.save();
+    ctx.filter = getFilterString();
+    // Draw without mirroring (CSS will handle mirroring for preview)
+    ctx.drawImage(video, sx, sy, drawW, drawH, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // Apply vignette
+    if (vignette > 0) {
+      ctx.save();
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.width / 2 - vignette * 5,
+        canvas.width / 2, canvas.height / 2, canvas.width / 2
+      );
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, `rgba(0,0,0,${vignette / 100})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Apply clarity
+    if (clarity > 0) {
+      ctx.save();
+      ctx.filter = `contrast(${1 + clarity / 100})`;
+      ctx.drawImage(canvas, 0, 0);
+      ctx.restore();
+    }
+
+    // Apply grain
+    if (grain > 0) {
+      ctx.save();
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * grain;
+        data[i] += noise;
+        data[i + 1] += noise;
+        data[i + 2] += noise;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      ctx.restore();
+    }
+  }, [filters, getFilterString]);
+
+  const startPreviewLoop = useCallback(() => {
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    const loop = () => {
+      drawToCanvas();
+      rafIdRef.current = requestAnimationFrame(loop);
+    };
+    rafIdRef.current = requestAnimationFrame(loop);
+  }, [drawToCanvas]);
+
+  const stopPreviewLoop = useCallback(() => {
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+  }, []);
+
+  const capture = useCallback(async (mirror: boolean = true): Promise<Blob> => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2) {
+      throw new Error('Camera not ready');
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Failed to get canvas context');
+
+    // Set canvas dimensions
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+    if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+    }
+
+    const { scale, vignette, clarity, grain } = filters;
+    const srcW = videoWidth;
+    const srcH = videoHeight;
+    const drawW = Math.round(srcW / scale);
+    const drawH = Math.round(srcH / scale);
+    const sx = Math.max(0, Math.round((srcW - drawW) / 2));
+    const sy = Math.max(0, Math.round((srcH - drawH) / 2));
+
+    ctx.save();
+    ctx.filter = getFilterString();
+    
+    // Apply mirroring if requested
+    if (mirror) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    
+    ctx.drawImage(video, sx, sy, drawW, drawH, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // Apply vignette
+    if (vignette > 0) {
+      ctx.save();
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.width / 2 - vignette * 5,
+        canvas.width / 2, canvas.height / 2, canvas.width / 2
+      );
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, `rgba(0,0,0,${vignette / 100})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Apply clarity
+    if (clarity > 0) {
+      ctx.save();
+      ctx.filter = `contrast(${1 + clarity / 100})`;
+      ctx.drawImage(canvas, 0, 0);
+      ctx.restore();
+    }
+
+    // Apply grain
+    if (grain > 0) {
+      ctx.save();
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * grain;
+        data[i] += noise;
+        data[i + 1] += noise;
+        data[i + 2] += noise;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      ctx.restore();
+    }
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create blob'));
+            return;
+          }
+          resolve(blob);
+        },
+        'image/jpeg',
+        0.92
+      );
+    });
+  }, [filters, getFilterString]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && isActive) {
+      const handleLoadedMetadata = () => {
+        // Start preview loop when video is ready
+        startPreviewLoop();
+      };
+      
+      if (video.readyState >= 2) {
+        // Video already loaded, start immediately
+        startPreviewLoop();
+      } else {
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      }
+      
+      const handlePlay = () => {
+        startPreviewLoop();
+      };
+      video.addEventListener('play', handlePlay);
+      
+      return () => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener('play', handlePlay);
+        stopPreviewLoop();
+      };
+    } else {
+      stopPreviewLoop();
+    }
+  }, [isActive, startPreviewLoop, stopPreviewLoop]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
+  return {
+    videoRef,
+    canvasRef,
+    isActive,
+    filters,
+    setFilters,
+    startCamera,
+    stopCamera,
+    capture,
+    isTorchOn,
+    toggleTorch,
+    isScreenTorchOn,
+    toggleScreenTorch,
+  };
+}
