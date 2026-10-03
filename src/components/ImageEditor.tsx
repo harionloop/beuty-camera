@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { FilterSettings, DEFAULT_FILTERS } from '@/hooks/useCamera';
-import { updatePhoto } from '@/lib/indexeddb';
+import { updatePhoto, getPhoto } from '@/lib/indexeddb';
 import FilterSliders from './FilterSliders';
 
 interface Sticker {
@@ -258,27 +258,191 @@ export default function ImageEditor({ imageUrl, imageId, onClose, onUpdated }: I
   }, [dragging, dragOffset]);
 
   const captureEditedBlob = async (): Promise<Blob> => {
-    const el = containerRef.current;
-    if (!el) throw new Error('Preview container not found');
-    const h2c = (await import('html2canvas')).default;
-    // Clear selection halo before capturing
-    setSelectedStickerId(null);
-    await new Promise(r => setTimeout(r, 60));
+    let sourceUrl = imageUrl;
+    let localBlobToRevoke: string | null = null;
+    try {
+      const storedItem = await getPhoto(imageId);
+      if (storedItem?.blob) {
+        localBlobToRevoke = URL.createObjectURL(storedItem.blob);
+        sourceUrl = localBlobToRevoke;
+      }
+    } catch {
+      // fallback to imageUrl
+    }
 
-    const canvas = await h2c(el, {
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      scale: 2,
-      logging: false,
-    });
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image element'));
+        img.src = sourceUrl;
+      });
 
-    return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('Failed to generate image blob'));
-      }, 'image/jpeg', 0.95);
-    });
+      const baseW = img.naturalWidth || img.width || 800;
+      const baseH = img.naturalHeight || img.height || 600;
+
+      // Determine frame padding and colors
+      let padTop = 0;
+      let padBottom = 0;
+      let padLeft = 0;
+      let padRight = 0;
+      let frameColor = '#ffffff';
+      let frameOutline: string | null = null;
+      let isFilmstrip = false;
+
+      if (activeFrame !== 'none') {
+        const minDim = Math.min(baseW, baseH);
+        const borderThickness = Math.max(14, Math.round(minDim * 0.04));
+
+        if (activeFrame === 'polaroid' || activeFrame === 'polaroid-dark') {
+          padTop = borderThickness;
+          padLeft = borderThickness;
+          padRight = borderThickness;
+          padBottom = Math.round(borderThickness * 3.6);
+          frameColor = activeFrame === 'polaroid-dark' ? '#1c1510' : '#ffffff';
+        } else if (activeFrame === 'filmstrip') {
+          isFilmstrip = true;
+          padTop = Math.round(borderThickness * 1.4);
+          padBottom = Math.round(borderThickness * 1.4);
+          padLeft = Math.round(borderThickness * 0.25);
+          padRight = Math.round(borderThickness * 0.25);
+          frameColor = '#14100c';
+        } else if (activeFrame === 'cinema') {
+          padTop = Math.round(borderThickness * 1.8);
+          padBottom = Math.round(borderThickness * 1.8);
+          frameColor = '#000000';
+        } else {
+          padTop = padBottom = padLeft = padRight = borderThickness;
+          if (activeFrame === 'white') frameColor = '#ffffff';
+          else if (activeFrame === 'dark') frameColor = '#1a1410';
+          else if (activeFrame === 'minimal') { frameColor = '#6b4d38'; padTop = padBottom = padLeft = padRight = Math.max(4, Math.round(borderThickness * 0.25)); }
+          else if (activeFrame === 'warm') { frameColor = '#f5e6d3'; frameOutline = '#d4956a'; }
+          else if (activeFrame === 'rose') { frameColor = '#fce4ec'; frameOutline = '#f48fb1'; }
+          else if (activeFrame === 'sage') { frameColor = '#e8f5e9'; frameOutline = '#81c784'; }
+          else if (activeFrame === 'lavender') { frameColor = '#f3e5f5'; frameOutline = '#ba68c8'; }
+          else if (activeFrame === 'peach') { frameColor = '#fff3e0'; frameOutline = '#ffb74d'; }
+          else if (activeFrame === 'mint') { frameColor = '#e0f2f1'; frameOutline = '#4db6ac'; }
+          else if (activeFrame === 'sky') { frameColor = '#e1f5fe'; frameOutline = '#4fc3f7'; }
+          else if (activeFrame === 'gold') { frameColor = '#f4c060'; frameOutline = '#e07b54'; }
+          else if (activeFrame === 'sunset') { frameColor = '#ff758c'; frameOutline = '#ff7eb3'; }
+          else if (activeFrame === 'aurora') { frameColor = '#00c6ff'; frameOutline = '#0072ff'; }
+          else if (activeFrame === 'blush') { frameColor = '#fbc2eb'; frameOutline = '#a6c1ee'; }
+          else if (activeFrame === 'copper') { frameColor = '#c77d58'; frameOutline = '#e8a584'; }
+          else if (activeFrame === 'neon') { frameColor = '#ff2a85'; }
+          else if (activeFrame === 'museum') { padTop = padBottom = padLeft = padRight = Math.round(borderThickness * 1.5); frameColor = '#faf6f0'; frameOutline = '#dcd3c6'; }
+          else if (activeFrame === 'double-classic') { frameColor = '#ffffff'; frameOutline = '#d4956a'; }
+          else if (activeFrame === 'postage') { frameColor = '#d9b897'; }
+          else if (activeFrame === 'dots') { frameColor = '#e07b54'; }
+          else if (activeFrame === 'parchment') { frameColor = '#ede1d1'; }
+        }
+      }
+
+      const canvasW = baseW + padLeft + padRight;
+      const canvasH = baseH + padTop + padBottom;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get 2D canvas context');
+
+      // Draw frame background
+      if (activeFrame !== 'none') {
+        ctx.fillStyle = frameColor;
+        ctx.fillRect(0, 0, canvasW, canvasH);
+
+        if (frameOutline) {
+          ctx.lineWidth = Math.max(3, Math.round(canvasW * 0.006));
+          ctx.strokeStyle = frameOutline;
+          ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, canvasW - ctx.lineWidth, canvasH - ctx.lineWidth);
+        }
+
+        if (isFilmstrip) {
+          ctx.fillStyle = '#ffffff';
+          const holeW = Math.max(6, Math.round(canvasW * 0.018));
+          const holeH = Math.max(8, Math.round(padTop * 0.45));
+          const holeGap = Math.max(10, Math.round(canvasW * 0.04));
+          for (let x = holeGap; x < canvasW - holeW; x += holeGap + holeW) {
+            ctx.fillRect(x, (padTop - holeH) / 2, holeW, holeH);
+            ctx.fillRect(x, canvasH - padBottom + (padBottom - holeH) / 2, holeW, holeH);
+          }
+        }
+      }
+
+      // Draw photo with CSS filters & scale
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(padLeft, padTop, baseW, baseH);
+      ctx.clip();
+
+      const filterStr = getEditorFilterString(filters);
+      if (filterStr) {
+        ctx.filter = filterStr;
+      }
+
+      const scale = filters.scale || 1;
+      if (scale !== 1) {
+        ctx.translate(padLeft + baseW / 2, padTop + baseH / 2);
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH);
+      } else {
+        ctx.drawImage(img, padLeft, padTop, baseW, baseH);
+      }
+      ctx.restore();
+
+      // Draw Vignette
+      if (filters.vignette > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(padLeft, padTop, baseW, baseH);
+        ctx.clip();
+
+        const cx = padLeft + baseW / 2;
+        const cy = padTop + baseH / 2;
+        const r = Math.max(baseW, baseH) / 2;
+        const innerR = Math.max(0, r * (1 - filters.vignette / 100));
+
+        const grad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, r);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(0,0,0,${Math.min(0.95, (filters.vignette / 100) * 0.9)})`);
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(padLeft, padTop, baseW, baseH);
+        ctx.restore();
+      }
+
+      // Draw Stickers
+      if (stickers.length > 0) {
+        const previewImg = containerRef.current?.querySelector('img');
+        const previewW = previewImg?.clientWidth || 500;
+        const scaleRatio = previewW > 0 ? (baseW / previewW) : 1;
+
+        ctx.save();
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+
+        for (const s of stickers) {
+          const fontSize = Math.max(16, Math.round(s.size * scaleRatio));
+          ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+          const posX = padLeft + (s.x / 100) * baseW;
+          const posY = padTop + (s.y / 100) * baseH;
+          ctx.fillText(s.emoji, posX, posY);
+        }
+        ctx.restore();
+      }
+
+      return await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to generate PNG blob'));
+        }, 'image/png');
+      });
+    } finally {
+      if (localBlobToRevoke) {
+        URL.revokeObjectURL(localBlobToRevoke);
+      }
+    }
   };
 
   // Requirement 4: Update the existing photo in gallery
@@ -320,30 +484,27 @@ export default function ImageEditor({ imageUrl, imageId, onClose, onUpdated }: I
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `beautycam_edited_${Date.now()}.jpg`;
+      a.download = `beautycam_edited_${Date.now()}.png`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
       URL.revokeObjectURL(url);
-      toast.success('Downloaded to device! ⬇', {
+      toast.success('Downloaded as PNG! 🖼️', {
         style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' }
       });
-    } catch {
-      const a = document.createElement('a');
-      a.href = imageUrl;
-      a.download = `beautycam_${Date.now()}.jpg`;
-      a.click();
-      toast.success('Downloaded original photo', {
-        style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' }
-      });
+    } catch (err) {
+      console.error('Failed to download', err);
+      toast.error('Failed to export edited photo');
     } finally {
       setIsSaving(false);
     }
-  }, [imageUrl]);
+  }, [imageId, imageUrl, filters, activeFrame, stickers]);
 
   const handleShare = async (platform: string) => {
     if (platform === 'native' && typeof navigator.share !== 'undefined') {
       try {
         const blob = await captureEditedBlob();
-        const file = new File([blob], 'beautycam_edited.jpg', { type: 'image/jpeg' });
+        const file = new File([blob], 'beautycam_edited.png', { type: 'image/png' });
         await navigator.share({ title: 'BeautyCam Photo', text: 'Check out my edited photo! ✨', files: [file] });
         return;
       } catch { /* fallback */ }

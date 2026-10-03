@@ -93,16 +93,52 @@ export default function Gallery({
     try {
       const item = await getPhoto(id);
       if (!item) { toast.error('Photo not found'); return; }
-      const url = item.cloudinaryUrl || URL.createObjectURL(item.blob);
+
+      let pngBlob: Blob;
+      if (item.blob) {
+        if (item.blob.type === 'image/png') {
+          pngBlob = item.blob;
+        } else {
+          // Convert to true PNG via canvas
+          const img = new Image();
+          const objUrl = URL.createObjectURL(item.blob);
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error('Failed to load blob for PNG conversion'));
+            img.src = objUrl;
+          });
+          URL.revokeObjectURL(objUrl);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            pngBlob = await new Promise<Blob>((res, rej) => {
+              canvas.toBlob(b => b ? res(b) : rej(new Error('PNG conversion failed')), 'image/png');
+            });
+          } else {
+            pngBlob = item.blob;
+          }
+        }
+      } else if (item.cloudinaryUrl) {
+        const resp = await fetch(item.cloudinaryUrl);
+        pngBlob = await resp.blob();
+      } else {
+        toast.error('Image data missing');
+        return;
+      }
+
+      const url = URL.createObjectURL(pngBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.jpg`;
-      a.target = '_blank';
+      a.download = `beautycam_${new Date(item.createdAt).toISOString().replace(/[:.]/g, '-')}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      if (!item.cloudinaryUrl) URL.revokeObjectURL(url);
-      toast.success('Download started', {
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded as PNG! 🖼️', {
         style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' }
       });
     } catch (err) {
