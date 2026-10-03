@@ -315,6 +315,20 @@ body {
   animation: fadeInUp 0.3s ease forwards;
 }
 
+/* Show/Hide Panel Utilities */
+.panel-hidden {
+  display: none !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+.resizer {
+  user-select: none;
+  touch-action: none;
+}
+
 /* Responsive Design */
 @media (max-width: 1023px) {
   html, body {

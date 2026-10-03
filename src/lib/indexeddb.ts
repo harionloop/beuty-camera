@@ -127,7 +127,12 @@ export async function clearGallery(): Promise<void> {
 
 export async function updatePhoto(
   id: number,
-  updates: { cloudinaryUrl?: string; cloudinaryPublicId?: string; meta?: PhotoMeta }
+  updates: {
+    cloudinaryUrl?: string | null;
+    cloudinaryPublicId?: string | null;
+    meta?: PhotoMeta;
+    blob?: Blob;
+  }
 ): Promise<void> {
   const db = await openDB();
   return new Promise((res, rej) => {
@@ -143,8 +148,9 @@ export async function updatePhoto(
       }
       const updatedItem = {
         ...item,
-        ...(updates.cloudinaryUrl && { cloudinaryUrl: updates.cloudinaryUrl }),
-        ...(updates.cloudinaryPublicId && { cloudinaryPublicId: updates.cloudinaryPublicId }),
+        ...(updates.blob ? { blob: updates.blob, cloudinaryUrl: undefined, cloudinaryPublicId: undefined } : {}),
+        ...(updates.cloudinaryUrl !== undefined && { cloudinaryUrl: updates.cloudinaryUrl ?? undefined }),
+        ...(updates.cloudinaryPublicId !== undefined && { cloudinaryPublicId: updates.cloudinaryPublicId ?? undefined }),
         ...(updates.meta && { meta: updates.meta }),
       };
       const putReq = store.put(updatedItem);

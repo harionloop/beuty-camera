@@ -47,7 +47,10 @@ export default function Home() {
 
   const [isPresetsCollapsed, setIsPresetsCollapsed] = useState(false);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
-  const [previewWidth, setPreviewWidth] = useState(70); // Initial width percentage
+  const [previewWidth, setPreviewWidth] = useState(58); // Initial width percentage
+  const [isCameraHidden, setIsCameraHidden] = useState(false);
+  const [isGalleryHidden, setIsGalleryHidden] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [activePreset, setActivePreset] = useState<string | null>(null);
 
   useEffect(() => {
@@ -223,22 +226,54 @@ export default function Home() {
   }, [captureCount]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
     const startX = e.clientX;
     const startWidth = previewWidth;
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const newWidth =
-        startWidth + ((e.clientX - startX) / window.innerWidth) * 100;
-      setPreviewWidth(Math.max(20, Math.min(80, newWidth))); // Clamp width
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaPct = (deltaX / window.innerWidth) * 100;
+      const newWidth = Math.max(22, Math.min(78, startWidth + deltaPct));
+      setPreviewWidth(newWidth);
     };
 
     const handleMouseUp = () => {
+      setIsDragging(false);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    setIsDragging(true);
+    const startX = e.touches[0].clientX;
+    const startWidth = previewWidth;
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      if (moveEvent.touches.length !== 1) return;
+      const deltaX = moveEvent.touches[0].clientX - startX;
+      const deltaPct = (deltaX / window.innerWidth) * 100;
+      const newWidth = Math.max(22, Math.min(78, startWidth + deltaPct));
+      setPreviewWidth(newWidth);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("touchend", handleTouchEnd);
   };
 
   return (
@@ -270,8 +305,16 @@ export default function Home() {
 
         {/* Left Section - Camera & Filters */}
         <div
-          className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0"
-          style={{ borderRight: "1px solid var(--border)" }}
+          className={`w-full flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:min-h-0 ${
+            isCameraHidden ? 'panel-hidden' : 'flex'
+          }`}
+          style={{
+            flex: isCameraHidden ? 'none' : isGalleryHidden ? '1 1 100%' : `0 0 ${previewWidth}%`,
+            width: isCameraHidden ? '0px' : isGalleryHidden ? '100%' : `${previewWidth}%`,
+            maxWidth: isCameraHidden ? '0px' : isGalleryHidden ? '100%' : `${previewWidth}%`,
+            borderRight: (!isGalleryHidden && !isCameraHidden) ? '1px solid var(--border)' : 'none',
+            transition: isDragging ? 'none' : 'max-width 0.15s ease, flex 0.15s ease',
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -283,12 +326,77 @@ export default function Home() {
                 BeautyCam
               </h1>
             </div>
+
             <div className="flex items-center gap-2">
+              {/* Show gallery button when gallery is hidden */}
+              {isGalleryHidden && (
+                <button
+                  onClick={() => { setIsGalleryHidden(false); setIsCameraHidden(false); }}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
+                  style={{ background: 'var(--accent)', color: 'white' }}
+                  title="Show Gallery & Split View"
+                >
+                  <span>🖼️</span>
+                  <span>Show Gallery</span>
+                </button>
+              )}
+
+              {/* Fullscreen Camera button */}
+              {!isGalleryHidden && (
+                <button
+                  onClick={() => { setIsGalleryHidden(true); setIsCameraHidden(false); }}
+                  className="hidden sm:flex px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-105 items-center gap-1"
+                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                  title="Maximize Camera (Hide Gallery)"
+                >
+                  <span>⛶</span>
+                  <span>Fullscreen</span>
+                </button>
+              )}
+
+              {/* Hide Camera / Show Gallery button */}
+              {!isCameraHidden && (
+                <button
+                  onClick={() => { setIsCameraHidden(true); setIsGalleryHidden(false); }}
+                  className="hidden sm:flex px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-105 items-center gap-1"
+                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                  title="Hide Camera (Fullscreen Gallery)"
+                >
+                  <span>🖼️</span>
+                  <span>Gallery Only</span>
+                </button>
+              )}
+
               <div className="text-xs px-3 py-1.5 rounded-full header-info font-medium" style={{ background: "var(--accent-lighter)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
                 Local-First
               </div>
               <ThemeToggle />
             </div>
+          </div>
+
+          {/* Mobile View Switcher */}
+          <div className="flex lg:hidden items-center justify-center gap-1 p-1 rounded-full border text-xs" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <button
+              onClick={() => { setIsCameraHidden(false); setIsGalleryHidden(true); }}
+              className="flex-1 py-1 px-3 rounded-full font-medium transition-all text-center"
+              style={!isCameraHidden && isGalleryHidden ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--text-secondary)' }}
+            >
+              📸 Camera
+            </button>
+            <button
+              onClick={() => { setIsCameraHidden(false); setIsGalleryHidden(false); }}
+              className="flex-1 py-1 px-3 rounded-full font-medium transition-all text-center"
+              style={!isCameraHidden && !isGalleryHidden ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--text-secondary)' }}
+            >
+              ⚖️ Both
+            </button>
+            <button
+              onClick={() => { setIsCameraHidden(true); setIsGalleryHidden(false); }}
+              className="flex-1 py-1 px-3 rounded-full font-medium transition-all text-center"
+              style={isCameraHidden && !isGalleryHidden ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--text-secondary)' }}
+            >
+              🖼️ Gallery
+            </button>
           </div>
 
           {/* Camera Viewer */}
@@ -419,22 +527,85 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Resizer Handle */}
-        <div
-          onMouseDown={handleMouseDown}
-          className="w-2 cursor-col-resize transition-colors duration-300 resizer hidden lg:flex items-center justify-center"
-          style={{ background: "var(--border)" }}
-        >
-          <div className="h-16 w-0.5 rounded-full" style={{ background: "var(--accent2)" }}></div>
-        </div>
+        {/* Resizer Handle (Desktop) */}
+        {!isCameraHidden && !isGalleryHidden && (
+          <div
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onDoubleClick={() => setPreviewWidth(55)}
+            className="w-3.5 relative group cursor-col-resize transition-colors duration-150 resizer hidden lg:flex flex-col items-center justify-center shrink-0 z-20 select-none hover:bg-orange-500/15"
+            style={{
+              background: isDragging ? "var(--accent)" : "var(--border)",
+            }}
+            title="Drag to resize · Double-click to reset to 55%"
+          >
+            {/* Collapse / Expand mini chevron controls on divider */}
+            <div className="flex flex-col gap-2 items-center opacity-60 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCameraHidden(true);
+                  setIsGalleryHidden(false);
+                }}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shadow-sm transition-transform hover:scale-125"
+                style={{ background: "var(--bg-card)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+                title="Hide Camera (Fullscreen Gallery)"
+              >
+                ◀
+              </button>
+              <div className="h-10 w-1 rounded-full" style={{ background: isDragging ? "#fff" : "var(--accent2)" }} />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsGalleryHidden(true);
+                  setIsCameraHidden(false);
+                }}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shadow-sm transition-transform hover:scale-125"
+                style={{ background: "var(--bg-card)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+                title="Hide Gallery (Fullscreen Camera)"
+              >
+                ▶
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Right Section - Gallery */}
         <div
-          className="w-full lg:w-[calc(100%_-_var(--preview-width))] p-4 lg:p-6 flex flex-col relative z-10 gallery-section shrink-0 min-h-[50vh] lg:flex-1 lg:min-h-0"
-          style={{ borderTop: "1px solid var(--border)", background: "var(--bg-secondary)" }}
+          className={`w-full p-4 lg:p-6 flex flex-col relative z-10 gallery-section shrink-0 min-h-[50vh] lg:min-h-0 ${
+            isGalleryHidden ? "panel-hidden" : "flex"
+          }`}
+          style={{
+            flex: isGalleryHidden ? "none" : isCameraHidden ? "1 1 100%" : "1 1 0%",
+            width: isGalleryHidden ? "0px" : isCameraHidden ? "100%" : `${100 - previewWidth}%`,
+            borderTop: "1px solid var(--border)",
+            background: "var(--bg-secondary)",
+            transition: isDragging ? "none" : "width 0.15s ease, flex 0.15s ease",
+          }}
         >
           <div className="relative z-10 h-full">
-            <Gallery onShowConfirm={showConfirm} />
+            <Gallery
+              onShowConfirm={showConfirm}
+              isCameraHidden={isCameraHidden}
+              isGalleryFullscreen={isCameraHidden && !isGalleryHidden}
+              onToggleFullscreen={() => {
+                if (isCameraHidden) {
+                  setIsCameraHidden(false);
+                  setIsGalleryHidden(false);
+                } else {
+                  setIsCameraHidden(true);
+                  setIsGalleryHidden(false);
+                }
+              }}
+              onShowCamera={() => {
+                setIsCameraHidden(false);
+                setIsGalleryHidden(false);
+              }}
+              onHideGallery={() => {
+                setIsGalleryHidden(true);
+                setIsCameraHidden(false);
+              }}
+            />
           </div>
         </div>
       </div>

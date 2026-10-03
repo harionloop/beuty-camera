@@ -12,9 +12,21 @@ interface GalleryProps {
     onConfirm: () => void,
     type?: 'danger' | 'warning' | 'info'
   ) => void;
+  isCameraHidden?: boolean;
+  isGalleryFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  onShowCamera?: () => void;
+  onHideGallery?: () => void;
 }
 
-export default function Gallery({ onShowConfirm }: GalleryProps) {
+export default function Gallery({
+  onShowConfirm,
+  isCameraHidden,
+  isGalleryFullscreen,
+  onToggleFullscreen,
+  onShowCamera,
+  onHideGallery,
+}: GalleryProps) {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPhoto, setEditingPhoto] = useState<{ id: number; url: string } | null>(null);
@@ -27,7 +39,7 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
       // Create stable blob URLs for local items
       const urls: Record<number, string> = {};
       for (const item of items) {
-        if (!item.cloudinaryUrl) {
+        if (item.blob) {
           urls[item.id] = URL.createObjectURL(item.blob);
         }
       }
@@ -55,7 +67,7 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getImageUrl = (item: PhotoItem) => item.cloudinaryUrl || blobUrls[item.id] || '';
+  const getImageUrl = (item: PhotoItem) => blobUrls[item.id] || item.cloudinaryUrl || '';
 
   const handleDelete = (id: number) => {
     onShowConfirm(
@@ -156,27 +168,76 @@ export default function Gallery({ onShowConfirm }: GalleryProps) {
           imageUrl={editingPhoto.url}
           imageId={editingPhoto.id}
           onClose={() => setEditingPhoto(null)}
+          onUpdated={refreshGallery}
         />
       )}
 
       <div className="flex flex-col gap-4 h-full flex-1 min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <div className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>
-              Your Gallery
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>
+                Your Gallery
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {photos.length} image{photos.length !== 1 ? 's' : ''}
+              </div>
             </div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {photos.length} image{photos.length !== 1 ? 's' : ''}
-            </div>
+
+            {/* Show camera button if camera is currently collapsed */}
+            {isCameraHidden && onShowCamera && (
+              <button
+                onClick={onShowCamera}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
+                style={{ background: 'var(--accent)', color: 'white' }}
+                title="Show Camera & Split View"
+              >
+                <span>📸</span>
+                <span>Show Camera</span>
+              </button>
+            )}
           </div>
-          <button
-            onClick={handleDownloadAll}
-            className="px-4 py-2 text-xs rounded-full font-semibold text-white transition-all hover:scale-105"
-            style={{ background: 'linear-gradient(135deg, #6bb8f5, #4a8ad4)', boxShadow: '0 2px 8px rgba(74,138,212,0.25)' }}
-          >
-            ⬇ Download All
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Fullscreen / Split View toggle for Gallery */}
+            {onToggleFullscreen && (
+              <button
+                onClick={onToggleFullscreen}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-105 flex items-center gap-1"
+                style={{
+                  background: isGalleryFullscreen ? 'var(--accent)' : 'var(--bg-card)',
+                  color: isGalleryFullscreen ? 'white' : 'var(--text-secondary)',
+                  borderColor: 'var(--border)',
+                }}
+                title={isGalleryFullscreen ? "Exit Fullscreen (Split View)" : "Maximize Gallery (Fullscreen)"}
+              >
+                <span>{isGalleryFullscreen ? '⚖️' : '⛶'}</span>
+                <span>{isGalleryFullscreen ? 'Split View' : 'Fullscreen'}</span>
+              </button>
+            )}
+
+            {/* Hide Gallery button */}
+            {!isCameraHidden && onHideGallery && (
+              <button
+                onClick={onHideGallery}
+                className="p-1.5 rounded-full text-xs border transition-all hover:scale-105"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                title="Hide Gallery (Fullscreen Camera)"
+              >
+                ▶
+              </button>
+            )}
+
+            <button
+              onClick={handleDownloadAll}
+              disabled={photos.length === 0}
+              className="px-4 py-2 text-xs rounded-full font-semibold text-white transition-all hover:scale-105 disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg, #6bb8f5, #4a8ad4)', boxShadow: '0 2px 8px rgba(74,138,212,0.25)' }}
+            >
+              ⬇ Download All
+            </button>
+          </div>
         </div>
 
         {/* Photo Grid */}

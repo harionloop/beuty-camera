@@ -2,6 +2,9 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import { FilterSettings, DEFAULT_FILTERS } from '@/hooks/useCamera';
+import { updatePhoto } from '@/lib/indexeddb';
+import FilterSliders from './FilterSliders';
 
 interface Sticker {
   id: string;
@@ -15,26 +18,109 @@ interface ImageEditorProps {
   imageUrl: string;
   imageId: number;
   onClose: () => void;
+  onUpdated?: () => void;
 }
 
-const STICKERS = [
-  '⭐', '🌸', '🌺', '🌻', '🌷', '🦋',
-  '💖', '💕', '💗', '💝', '💫', '✨',
-  '🎀', '🎉', '🎊', '🎈', '🎁', '🎗',
-  '😊', '😍', '🥰', '😎', '🤩', '😄',
-  '🌈', '☀️', '🌙', '⚡', '❄️', '🔥',
-  '🍓', '🍑', '🍒', '🌿', '🍀', '🌴',
+export interface FrameDef {
+  id: string;
+  label: string;
+  category: 'Classic' | 'Pastel' | 'Vintage' | 'Gradients' | 'Creative';
+  style: React.CSSProperties;
+}
+
+const FRAMES: FrameDef[] = [
+  // Classic
+  { id: 'none', label: 'None', category: 'Classic', style: {} },
+  { id: 'white', label: 'Studio White', category: 'Classic', style: { border: '14px solid #ffffff', boxShadow: '0 0 0 2px #e0d0c0, 0 8px 24px rgba(0,0,0,0.12)' } },
+  { id: 'dark', label: 'Noir Ebony', category: 'Classic', style: { border: '14px solid #1a1410', boxShadow: '0 0 0 2px #5c3d2e, 0 8px 24px rgba(0,0,0,0.4)' } },
+  { id: 'minimal', label: 'Thin Minimal', category: 'Classic', style: { border: '3px solid #6b4d38', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' } },
+  { id: 'double-classic', label: 'Dual Accent', category: 'Classic', style: { border: '8px solid #ffffff', outline: '3px solid #d4956a', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' } },
+  { id: 'museum', label: 'Museum Mat', category: 'Classic', style: { border: '22px solid #faf6f0', outline: '1px solid #dcd3c6', boxShadow: '0 6px 28px rgba(0,0,0,0.15)' } },
+
+  // Pastel
+  { id: 'warm', label: 'Warm Linen', category: 'Pastel', style: { border: '14px solid #f5e6d3', boxShadow: '0 0 0 2px #d4956a, 0 8px 24px rgba(0,0,0,0.1)' } },
+  { id: 'rose', label: 'Rose Bloom', category: 'Pastel', style: { border: '12px solid #fce4ec', outline: '3px solid #f48fb1', boxShadow: '0 8px 24px rgba(244,143,177,0.25)' } },
+  { id: 'sage', label: 'Sage Garden', category: 'Pastel', style: { border: '12px solid #e8f5e9', outline: '3px solid #81c784', boxShadow: '0 8px 24px rgba(129,199,132,0.22)' } },
+  { id: 'lavender', label: 'Lavender Dream', category: 'Pastel', style: { border: '12px solid #f3e5f5', outline: '3px solid #ba68c8', boxShadow: '0 8px 24px rgba(186,104,200,0.22)' } },
+  { id: 'peach', label: 'Peach Glow', category: 'Pastel', style: { border: '12px solid #fff3e0', outline: '3px solid #ffb74d', boxShadow: '0 8px 24px rgba(255,183,77,0.22)' } },
+  { id: 'mint', label: 'Mint Fresh', category: 'Pastel', style: { border: '12px solid #e0f2f1', outline: '3px solid #4db6ac', boxShadow: '0 8px 24px rgba(77,182,172,0.22)' } },
+  { id: 'sky', label: 'Soft Sky', category: 'Pastel', style: { border: '12px solid #e1f5fe', outline: '3px solid #4fc3f7', boxShadow: '0 8px 24px rgba(79,195,247,0.22)' } },
+
+  // Vintage
+  { id: 'polaroid', label: 'Classic Polaroid', category: 'Vintage', style: { padding: '12px 12px 48px 12px', background: '#ffffff', boxShadow: '0 8px 28px rgba(0,0,0,0.18)' } },
+  { id: 'polaroid-dark', label: 'Noir Polaroid', category: 'Vintage', style: { padding: '12px 12px 48px 12px', background: '#201815', boxShadow: '0 8px 28px rgba(0,0,0,0.45)' } },
+  { id: 'filmstrip', label: '35mm Filmstrip', category: 'Vintage', style: { borderTop: '20px solid #14100c', borderBottom: '20px solid #14100c', borderLeft: '4px solid #14100c', borderRight: '4px solid #14100c', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' } },
+  { id: 'parchment', label: 'Antique Parchment', category: 'Vintage', style: { border: '14px solid #ede1d1', boxShadow: 'inset 0 0 16px rgba(120,70,20,0.22), 0 8px 24px rgba(0,0,0,0.15)' } },
+  { id: 'postage', label: 'Postage Stamp', category: 'Vintage', style: { border: '10px dashed #d9b897', padding: '6px', background: '#fefbf6', boxShadow: '0 6px 20px rgba(0,0,0,0.12)' } },
+
+  // Gradients
+  { id: 'gold', label: 'Golden Hour', category: 'Gradients', style: { border: '10px solid #f4c060', outline: '3px solid #e07b54', boxShadow: '0 8px 26px rgba(224,123,84,0.35)' } },
+  { id: 'sunset', label: 'Sunset Horizon', category: 'Gradients', style: { border: '10px solid #ff758c', outline: '3px solid #ff7eb3', boxShadow: '0 8px 26px rgba(255,117,140,0.35)' } },
+  { id: 'aurora', label: 'Neon Aurora', category: 'Gradients', style: { border: '10px solid #00c6ff', outline: '3px solid #0072ff', boxShadow: '0 8px 26px rgba(0,198,255,0.35)' } },
+  { id: 'blush', label: 'Sweet Blush', category: 'Gradients', style: { border: '10px solid #fbc2eb', outline: '3px solid #a6c1ee', boxShadow: '0 8px 26px rgba(251,194,235,0.35)' } },
+  { id: 'copper', label: 'Metallic Copper', category: 'Gradients', style: { border: '12px solid #c77d58', outline: '2px solid #e8a584', boxShadow: '0 8px 26px rgba(199,125,88,0.35)' } },
+
+  // Creative
+  { id: 'dots', label: 'Polka Border', category: 'Creative', style: { border: '8px dotted #e07b54', padding: '6px', background: '#fff9f5', boxShadow: '0 6px 20px rgba(224,123,84,0.2)' } },
+  { id: 'cinema', label: 'Cinema Scope', category: 'Creative', style: { borderTop: '24px solid #000000', borderBottom: '24px solid #000000', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' } },
+  { id: 'neon', label: 'Cyber Glow', category: 'Creative', style: { border: '5px solid #ff2a85', boxShadow: '0 0 16px #ff2a85, inset 0 0 8px #ff2a85' } },
 ];
 
-const FRAMES = [
-  { id: 'none', label: 'None', style: {} },
-  { id: 'white', label: 'Classic White', style: { border: '14px solid #ffffff', boxShadow: '0 0 0 2px #e0d0c0, 0 8px 24px rgba(0,0,0,0.12)' } },
-  { id: 'warm', label: 'Warm Linen', style: { border: '14px solid #f5e6d3', boxShadow: '0 0 0 2px #d4956a, 0 8px 24px rgba(0,0,0,0.1)' } },
-  { id: 'gold', label: 'Golden Hour', style: { border: '10px solid #f4c060', boxShadow: '0 0 0 3px #e07b54, 0 8px 24px rgba(200,120,0,0.25)' } },
-  { id: 'rose', label: 'Rose Bloom', style: { border: '10px solid #f9a8c9', boxShadow: '0 0 0 3px #e7768e, 0 8px 24px rgba(200,80,100,0.2)' } },
-  { id: 'sage', label: 'Sage Garden', style: { border: '10px solid #b8d4b0', boxShadow: '0 0 0 3px #7aac72, 0 8px 24px rgba(80,140,80,0.18)' } },
-  { id: 'dark', label: 'Noir Edge', style: { border: '10px solid #2a1a0e', boxShadow: '0 0 0 2px #5c3d2e, 0 8px 24px rgba(0,0,0,0.4)' } },
-  { id: 'polaroid', label: 'Polaroid', style: { padding: '10px 10px 40px', background: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } },
+const STICKER_CATEGORIES = [
+  {
+    id: 'sparkles',
+    label: 'Sparkles',
+    icon: '✨',
+    items: ['✨', '⭐', '🌟', '💫', '⚡', '🌙', '☀️', '🔥', '🪄', '🔮', '💎', '🌈', '🦋', '🕊️'],
+  },
+  {
+    id: 'hearts',
+    label: 'Hearts',
+    icon: '💖',
+    items: ['💖', '💕', '💗', '💓', '💞', '💘', '💝', '❤️', '🧡', '💛', '💚', '💙', '💜', '🤍'],
+  },
+  {
+    id: 'nature',
+    label: 'Nature',
+    icon: '🌸',
+    items: ['🌸', '🌺', '🌻', '🌷', '🌹', '💐', '🌼', '🍀', '🌿', '🍃', '🌴', '🍁', '🍄', '🌱'],
+  },
+  {
+    id: 'faces',
+    label: 'Faces',
+    icon: '😊',
+    items: ['😊', '😍', '🥰', '😘', '😎', '🤩', '😄', '😋', '😜', '🥳', '😇', '🤗', '🤭', '😻'],
+  },
+  {
+    id: 'party',
+    label: 'Party',
+    icon: '🎉',
+    items: ['🎉', '🎊', '🎈', '🎁', '🎀', '🎗', '👑', '🎂', '🥂', '🍾', '🍰', '🧁', '🍿', '🍭'],
+  },
+  {
+    id: 'food',
+    label: 'Food',
+    icon: '🍓',
+    items: ['🍓', '🍑', '🍒', '🍉', '🍇', '🥑', '🍩', '🍪', '☕', '🧋', '🍦', '🍨', '🍕', '🥞'],
+  },
+  {
+    id: 'cute',
+    label: 'Cute',
+    icon: '🐱',
+    items: ['🐱', '🐶', '🐰', '🐼', '🦊', '🐻', '🐨', '🐣', '🦄', '🐬', '🦩', '🐾', '🧸', '🐥'],
+  },
+];
+
+const EDITOR_PRESETS: { name: string; icon: string; filters: Partial<FilterSettings> }[] = [
+  { name: 'Original', icon: '⊘', filters: DEFAULT_FILTERS },
+  { name: 'Warm Sunset', icon: '🌅', filters: { brightness: 1.1, contrast: 1.15, saturate: 1.3, hue: 15, sepia: 12, exposure: 0.2, temperature: 35, vibrance: 25, vignette: 20 } },
+  { name: 'Golden Hour', icon: '✨', filters: { brightness: 1.12, contrast: 1.1, saturate: 1.25, hue: 25, sepia: 18, exposure: 0.2, temperature: 40, highlight: 15 } },
+  { name: 'Noir B&W', icon: '🎬', filters: { brightness: 1.05, contrast: 1.35, saturate: 0, grayscale: 100, exposure: 0.1, clarity: 25, vignette: 30 } },
+  { name: 'Vintage 70s', icon: '🎞️', filters: { brightness: 1.08, contrast: 0.95, saturate: 0.85, sepia: 35, exposure: 0.1, grain: 20, vignette: 25 } },
+  { name: 'Cool Breeze', icon: '❄️', filters: { brightness: 1.06, contrast: 1.08, saturate: 1.1, hue: 200, tint: -25, exposure: 0.1 } },
+  { name: 'Cyber Neon', icon: '⚡', filters: { brightness: 1.15, contrast: 1.3, saturate: 1.8, hue: 290, clarity: 30, vibrance: 40 } },
+  { name: 'Soft Velvet', icon: '🌸', filters: { brightness: 1.12, contrast: 0.92, saturate: 1.15, blur: 0.3, sepia: 8, highlight: 20 } },
+  { name: 'Vivid Pop', icon: '🎨', filters: { brightness: 1.1, contrast: 1.2, saturate: 1.5, clarity: 20, vibrance: 35 } },
 ];
 
 function getShareLink(platform: string, shareUrl: string): string {
@@ -48,35 +134,102 @@ function getShareLink(platform: string, shareUrl: string): string {
   return links[platform] || '';
 }
 
-export default function ImageEditor({ imageUrl, imageId, onClose }: ImageEditorProps) {
+function getEditorFilterString(filters: FilterSettings): string {
+  const {
+    brightness, contrast, saturate, hue, blur, sepia, grayscale, invert, opacity,
+    exposure, vibrance, tint, clarity
+  } = filters;
+
+  const effBrightness = Math.max(0.1, brightness + (exposure || 0) * 0.2);
+  const effContrast = Math.max(0.1, contrast * (1 + (clarity || 0) / 200));
+  const effSaturate = Math.max(0, saturate * (1 + (vibrance || 0) / 100));
+  const effHue = ((hue || 0) + (tint || 0) * 0.5) % 360;
+
+  const filtersArray = [
+    `brightness(${effBrightness.toFixed(2)})`,
+    `contrast(${effContrast.toFixed(2)})`,
+    `saturate(${effSaturate.toFixed(2)})`,
+    `hue-rotate(${effHue.toFixed(1)}deg)`,
+    blur > 0 ? `blur(${blur.toFixed(1)}px)` : '',
+    sepia > 0 ? `sepia(${sepia}%)` : '',
+    grayscale > 0 ? `grayscale(${grayscale}%)` : '',
+    invert > 0 ? `invert(${invert}%)` : '',
+    opacity < 1 ? `opacity(${opacity})` : '',
+  ];
+
+  return filtersArray.filter(Boolean).join(' ');
+}
+
+export default function ImageEditor({ imageUrl, imageId, onClose, onUpdated }: ImageEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeFrame, setActiveFrame] = useState('none');
+  const [frameCategory, setFrameCategory] = useState<string>('All');
   const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
+  const [stickerCategory, setStickerCategory] = useState<string>('sparkles');
+  const [stickerSize, setStickerSize] = useState<number>(42);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [tab, setTab] = useState<'frames' | 'stickers' | 'share'>('frames');
+  const [tab, setTab] = useState<'adjust' | 'frames' | 'stickers' | 'share'>('adjust');
+  const [filters, setFilters] = useState<FilterSettings>(DEFAULT_FILTERS);
+  const [isSaving, setIsSaving] = useState(false);
 
+  const activeSticker = stickers.find(s => s.id === selectedStickerId);
   const frameStyle = FRAMES.find(f => f.id === activeFrame)?.style || {};
+  const currentStickersList = STICKER_CATEGORIES.find(c => c.id === stickerCategory)?.items || STICKER_CATEGORIES[0].items;
+
+  const filteredFrames = frameCategory === 'All'
+    ? FRAMES
+    : FRAMES.filter(f => f.category === frameCategory);
 
   const addSticker = (emoji: string) => {
     const newSticker: Sticker = {
       id: `s-${Date.now()}-${Math.random()}`,
       emoji,
-      x: 20 + Math.random() * 60,
-      y: 20 + Math.random() * 60,
-      size: 36,
+      x: 30 + (Math.random() * 30),
+      y: 30 + (Math.random() * 30),
+      size: stickerSize,
     };
     setStickers(prev => [...prev, newSticker]);
+    setSelectedStickerId(newSticker.id);
     toast.success(`${emoji} added! Drag to move.`, {
       duration: 1500,
       style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px', fontSize: '13px' }
     });
   };
 
-  const removeSticker = (id: string) => setStickers(prev => prev.filter(s => s.id !== id));
+  const removeSticker = (id: string) => {
+    setStickers(prev => prev.filter(s => s.id !== id));
+    if (selectedStickerId === id) setSelectedStickerId(null);
+  };
+
+  const duplicateSticker = (id: string) => {
+    const target = stickers.find(s => s.id === id);
+    if (!target) return;
+    const duplicated: Sticker = {
+      ...target,
+      id: `s-${Date.now()}-${Math.random()}`,
+      x: Math.min(85, target.x + 5),
+      y: Math.min(85, target.y + 5),
+    };
+    setStickers(prev => [...prev, duplicated]);
+    setSelectedStickerId(duplicated.id);
+  };
+
+  const changeStickerSize = (newSize: number) => {
+    const clamped = Math.max(16, Math.min(110, newSize));
+    setStickerSize(clamped);
+    if (selectedStickerId) {
+      setStickers(prev => prev.map(s => s.id === selectedStickerId ? { ...s, size: clamped } : s));
+    }
+  };
 
   const onStickerMouseDown = (e: React.MouseEvent, id: string) => {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedStickerId(id);
+    const target = stickers.find(s => s.id === id);
+    if (target) setStickerSize(target.size);
     setDragging(id);
     setDragOffset({ x: e.clientX, y: e.clientY });
   };
@@ -90,7 +243,7 @@ export default function ImageEditor({ imageUrl, imageId, onClose }: ImageEditorP
       const dx = ((e.clientX - dragOffset.x) / rect.width) * 100;
       const dy = ((e.clientY - dragOffset.y) / rect.height) * 100;
       setStickers(prev => prev.map(s => s.id === dragging
-        ? { ...s, x: Math.max(0, Math.min(93, s.x + dx)), y: Math.max(0, Math.min(93, s.y + dy)) }
+        ? { ...s, x: Math.max(0, Math.min(92, s.x + dx)), y: Math.max(0, Math.min(92, s.y + dy)) }
         : s
       ));
       setDragOffset({ x: e.clientX, y: e.clientY });
@@ -98,40 +251,106 @@ export default function ImageEditor({ imageUrl, imageId, onClose }: ImageEditorP
     const onUp = () => setDragging(null);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
   }, [dragging, dragOffset]);
+
+  const captureEditedBlob = async (): Promise<Blob> => {
+    const el = containerRef.current;
+    if (!el) throw new Error('Preview container not found');
+    const h2c = (await import('html2canvas')).default;
+    // Clear selection halo before capturing
+    setSelectedStickerId(null);
+    await new Promise(r => setTimeout(r, 60));
+
+    const canvas = await h2c(el, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      scale: 2,
+      logging: false,
+    });
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to generate image blob'));
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  // Requirement 4: Update the existing photo in gallery
+  const handleUpdateInGallery = async () => {
+    try {
+      setIsSaving(true);
+      const blob = await captureEditedBlob();
+      await updatePhoto(imageId, {
+        blob,
+        meta: {
+          filters: {
+            brightness: filters.brightness.toString(),
+            contrast: filters.contrast.toString(),
+            saturate: filters.saturate.toString(),
+            hue: filters.hue.toString(),
+            blur: filters.blur.toString(),
+            scale: filters.scale.toString(),
+          }
+        }
+      });
+      window.dispatchEvent(new Event('photoAdded'));
+      onUpdated?.();
+      toast.success('Photo updated in gallery! ✨', {
+        style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' }
+      });
+      onClose();
+    } catch (err) {
+      console.error('Failed to update photo', err);
+      toast.error('Failed to update photo in gallery');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDownload = useCallback(async () => {
     try {
-      const h2c = (await import('html2canvas')).default;
-      const el = containerRef.current;
-      if (!el) return;
-      const canvas = await h2c(el, { useCORS: true, backgroundColor: null });
+      setIsSaving(true);
+      const blob = await captureEditedBlob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.download = `beautycam_edited_${Date.now()}.png`;
-      a.href = canvas.toDataURL('image/png');
+      a.href = url;
+      a.download = `beautycam_edited_${Date.now()}.jpg`;
       a.click();
-      toast.success('Saved!', { style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' } });
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded to device! ⬇', {
+        style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' }
+      });
     } catch {
       const a = document.createElement('a');
-      a.href = imageUrl; a.download = `beautycam_${Date.now()}.jpg`; a.click();
-      toast.success('Downloaded!', { style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' } });
+      a.href = imageUrl;
+      a.download = `beautycam_${Date.now()}.jpg`;
+      a.click();
+      toast.success('Downloaded original photo', {
+        style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px' }
+      });
+    } finally {
+      setIsSaving(false);
     }
   }, [imageUrl]);
 
   const handleShare = async (platform: string) => {
     if (platform === 'native' && typeof navigator.share !== 'undefined') {
       try {
-        const res = await fetch(imageUrl);
-        const blob = await res.blob();
-        const file = new File([blob], 'beautycam.jpg', { type: 'image/jpeg' });
-        await navigator.share({ title: 'BeautyCam Photo', text: 'Check out my photo!', files: [file] });
+        const blob = await captureEditedBlob();
+        const file = new File([blob], 'beautycam_edited.jpg', { type: 'image/jpeg' });
+        await navigator.share({ title: 'BeautyCam Photo', text: 'Check out my edited photo! ✨', files: [file] });
         return;
       } catch { /* fallback */ }
     }
     const link = getShareLink(platform, imageUrl);
     if (link) window.open(link, '_blank', 'width=600,height=450');
-    toast.success('Opening...', { icon: '🔗', style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px', fontSize: '13px' } });
+    toast.success('Opening share...', { icon: '🔗', style: { background: '#fff', color: '#3d2b1a', border: '1px solid #f0e6dc', borderRadius: '12px', fontSize: '13px' } });
   };
 
   const handleCopyLink = () => {
@@ -142,156 +361,484 @@ export default function ImageEditor({ imageUrl, imageId, onClose }: ImageEditorP
     }
   };
 
+  const applyPreset = (presetFilters: Partial<FilterSettings>) => {
+    setFilters(prev => ({ ...prev, ...presetFilters }));
+    toast.success('Preset applied', { duration: 1000, style: { fontSize: '12px', borderRadius: '10px' } });
+  };
+
   const tabStyle = (t: string) => tab === t
     ? { background: 'var(--accent)', color: 'white', boxShadow: '0 2px 8px rgba(224,123,84,0.3)' }
     : { background: 'var(--accent-lighter)', color: 'var(--text-secondary)', border: '1px solid var(--border)' };
 
+  const computedFilterString = getEditorFilterString(filters);
+
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
-      style={{ background: 'rgba(61,43,26,0.55)', backdropFilter: 'blur(10px)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4"
+      style={{ background: 'rgba(40,25,15,0.65)', backdropFilter: 'blur(12px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget && !isSaving) onClose(); }}
     >
       <div
         className="relative flex flex-col lg:flex-row w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl fade-in-up"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '95vh' }}
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          height: '92vh',
+          maxHeight: '850px',
+        }}
       >
         {/* Close */}
-        <button onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all hover:scale-110"
+        <button
+          onClick={onClose}
+          disabled={isSaving}
+          className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all hover:scale-110 disabled:opacity-50"
           style={{ background: 'var(--border)', color: 'var(--text-secondary)' }}
-        >✕</button>
+          title="Close Editor"
+        >
+          ✕
+        </button>
 
-        {/* Image Preview */}
-        <div className="flex-1 flex items-center justify-center p-5 overflow-hidden" style={{ background: 'var(--bg-secondary)', minHeight: '260px' }}>
+        {/* Image Preview Canvas Area */}
+        <div
+          className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden relative"
+          style={{ background: 'var(--bg-secondary)', minHeight: '280px' }}
+          onClick={() => setSelectedStickerId(null)}
+        >
           <div
             ref={containerRef}
-            className="relative select-none"
+            className="relative select-none transition-all duration-200"
             style={{
               ...frameStyle,
-              borderRadius: (activeFrame === 'none' || activeFrame === 'polaroid') ? '12px' : '4px',
+              borderRadius: (activeFrame === 'none' || activeFrame.startsWith('polaroid')) ? '12px' : '4px',
               display: 'inline-block',
               maxWidth: '100%',
+              boxSizing: 'border-box',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt="Edit"
-              draggable={false}
-              style={{ display: 'block', maxWidth: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: activeFrame === 'none' ? '8px' : '0' }}
-            />
-            {stickers.map(s => (
-              <div key={s.id}
-                onMouseDown={e => onStickerMouseDown(e, s.id)}
-                className="absolute select-none group"
-                style={{ left: `${s.x}%`, top: `${s.y}%`, fontSize: `${s.size}px`, cursor: dragging === s.id ? 'grabbing' : 'grab', zIndex: 10, lineHeight: 1 }}
-              >
-                {s.emoji}
-                <button onClick={e => { e.stopPropagation(); removeSticker(s.id); }}
-                  className="absolute -top-2.5 -right-2.5 w-4 h-4 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: '#e07b54', fontSize: '9px', zIndex: 11 }}
-                >✕</button>
-              </div>
-            ))}
+            {/* The Image with CSS filters & transform */}
+            <div className="relative overflow-hidden" style={{ borderRadius: activeFrame === 'none' ? '8px' : '0' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Edit Preview"
+                crossOrigin="anonymous"
+                draggable={false}
+                style={{
+                  display: 'block',
+                  maxWidth: '100%',
+                  maxHeight: '56vh',
+                  objectFit: 'contain',
+                  filter: computedFilterString,
+                  transform: `scale(${filters.scale})`,
+                  transformOrigin: 'center center',
+                  transition: 'filter 0.08s ease',
+                }}
+              />
+
+              {/* Vignette Overlay */}
+              {filters.vignette > 0 && (
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: `radial-gradient(circle, transparent ${Math.max(10, 100 - filters.vignette)}%, rgba(0,0,0,${(filters.vignette / 100) * 0.9}) 100%)`,
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Draggable & Resizable Stickers */}
+            {stickers.map(s => {
+              const isSelected = selectedStickerId === s.id;
+              return (
+                <div
+                  key={s.id}
+                  onMouseDown={e => onStickerMouseDown(e, s.id)}
+                  onClick={e => { e.stopPropagation(); setSelectedStickerId(s.id); setStickerSize(s.size); }}
+                  className={`absolute select-none cursor-move transition-transform ${isSelected ? 'z-30 scale-105' : 'z-20'}`}
+                  style={{
+                    left: `${s.x}%`,
+                    top: `${s.y}%`,
+                    fontSize: `${s.size}px`,
+                    lineHeight: 1,
+                    filter: isSelected ? 'drop-shadow(0 0 6px rgba(224,123,84,0.7))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))',
+                  }}
+                >
+                  <div className="relative group">
+                    <span>{s.emoji}</span>
+
+                    {/* Selection Box & Floating Mini Toolbar */}
+                    {isSelected && (
+                      <div
+                        className="absolute -inset-1.5 rounded-lg border-2 border-dashed pointer-events-none"
+                        style={{ borderColor: 'var(--accent)' }}
+                      />
+                    )}
+
+                    {isSelected && (
+                      <div
+                        className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full shadow-lg z-40 whitespace-nowrap"
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => changeStickerSize(s.size - 6)}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold hover:bg-orange-100"
+                          style={{ color: 'var(--text-primary)' }}
+                          title="Decrease size"
+                        >
+                          -
+                        </button>
+                        <span className="text-[10px] font-mono px-1" style={{ color: 'var(--text-muted)' }}>
+                          {s.size}px
+                        </span>
+                        <button
+                          onClick={() => changeStickerSize(s.size + 6)}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold hover:bg-orange-100"
+                          style={{ color: 'var(--text-primary)' }}
+                          title="Increase size"
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => duplicateSticker(s.id)}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] hover:bg-orange-100"
+                          title="Duplicate sticker"
+                        >
+                          📋
+                        </button>
+                        <button
+                          onClick={() => removeSticker(s.id)}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white hover:scale-105"
+                          style={{ background: '#e07b54' }}
+                          title="Delete sticker"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Side Panel */}
-        <div className="flex flex-col w-full lg:w-72 xl:w-80 shrink-0 overflow-y-auto custom-scrollbar" style={{ borderLeft: '1px solid var(--border)' }}>
-          <div className="p-4 pb-3">
-            <div className="font-bold text-sm mb-0.5" style={{ color: 'var(--text-primary)' }}>Edit Photo</div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Frames · Stickers · Share</div>
+        {/* Side Panel: Controls & Tabs */}
+        <div
+          className="flex flex-col w-full lg:w-80 xl:w-96 shrink-0 h-full overflow-hidden"
+          style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-card)' }}
+        >
+          {/* Header */}
+          <div className="p-4 pb-2 shrink-0">
+            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+              Edit Photo
+            </div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Adjustments · Frames · Stickers · Share
+            </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 px-4 pb-3">
-            {(['frames', 'stickers', 'share'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)}
-                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all capitalize"
-                style={tabStyle(t)}
+          {/* Navigation Tabs */}
+          <div className="flex gap-1 px-4 pb-3 shrink-0">
+            {([
+              { key: 'adjust', icon: '✨', label: 'Adjust' },
+              { key: 'frames', icon: '🖼', label: 'Frames' },
+              { key: 'stickers', icon: '😊', label: 'Stickers' },
+              { key: 'share', icon: '📤', label: 'Share' },
+            ] as const).map(t => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className="flex-1 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1"
+                style={tabStyle(t.key)}
               >
-                {t === 'frames' ? '🖼' : t === 'stickers' ? '😊' : '📤'} {t}
+                <span>{t.icon}</span>
+                <span>{t.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Frames */}
-          {tab === 'frames' && (
-            <div className="px-4 pb-4">
-              <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Choose a frame style</div>
-              <div className="grid grid-cols-2 gap-2">
-                {FRAMES.map(frame => (
-                  <button key={frame.id} onClick={() => setActiveFrame(frame.id)}
-                    className="frame-preview py-3 px-2 text-xs font-medium text-center transition-all"
-                    style={activeFrame === frame.id
-                      ? { borderColor: 'var(--accent)', background: 'var(--accent-lighter)', color: 'var(--accent)' }
-                      : { background: 'var(--bg-primary)', color: 'var(--text-secondary)' }
-                    }
+          {/* Tab Content Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 pb-3">
+
+            {/* TAB 1: ADJUSTMENTS & EFFECTS (Requirement 1) */}
+            {tab === 'adjust' && (
+              <div className="space-y-4 pt-1">
+                {/* Quick Presets */}
+                <div>
+                  <div className="flex items-center justify-between text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
+                    <span>⚡ Quick Presets</span>
+                    <button
+                      onClick={() => setFilters(DEFAULT_FILTERS)}
+                      className="text-[11px] font-medium hover:underline"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Reset All
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {EDITOR_PRESETS.map((p) => (
+                      <button
+                        key={p.name}
+                        onClick={() => applyPreset(p.filters)}
+                        className="py-1.5 px-2 rounded-xl text-xs font-medium text-center border transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-1"
+                        style={{
+                          background: 'var(--bg-secondary)',
+                          borderColor: 'var(--border)',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
+                        <span>{p.icon}</span>
+                        <span className="truncate">{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border)' }} />
+
+                {/* Adjustments & Effects Sliders (Identical to Camera) */}
+                <FilterSliders filters={filters} onFilterChange={setFilters} />
+              </div>
+            )}
+
+            {/* TAB 2: FRAMES WITH CATEGORIES (Requirement 6) */}
+            {tab === 'frames' && (
+              <div className="space-y-3 pt-1">
+                {/* Categories */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  {['All', 'Classic', 'Pastel', 'Vintage', 'Gradients', 'Creative'].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setFrameCategory(cat)}
+                      className="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all"
+                      style={frameCategory === cat
+                        ? { background: 'var(--accent)', color: 'white' }
+                        : { background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                      }
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Frames Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredFrames.map(frame => (
+                    <button
+                      key={frame.id}
+                      onClick={() => setActiveFrame(frame.id)}
+                      className="frame-preview py-3 px-2 text-xs font-medium text-center transition-all rounded-xl"
+                      style={activeFrame === frame.id
+                        ? { borderColor: 'var(--accent)', background: 'var(--accent-lighter)', color: 'var(--accent)' }
+                        : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }
+                      }
+                    >
+                      <div className="text-base mb-1">
+                        {frame.id === 'none' ? '⊘' : frame.category === 'Vintage' ? '🎞️' : frame.category === 'Gradients' ? '✨' : '🖼️'}
+                      </div>
+                      <div className="truncate">{frame.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: STICKERS WITH CATEGORIES & SIZE SLIDER (Requirement 5) */}
+            {tab === 'stickers' && (
+              <div className="space-y-3.5 pt-1">
+                {/* Sticker Size Controls */}
+                <div
+                  className="p-3 rounded-2xl border space-y-2"
+                  style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}
+                >
+                  <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <span>
+                      {selectedStickerId ? `Selected Sticker: ${activeSticker?.emoji || ''}` : 'Sticker Size'}
+                    </span>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-lighter)', color: 'var(--accent)' }}>
+                      {stickerSize}px
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min={18}
+                    max={100}
+                    step={2}
+                    value={stickerSize}
+                    onChange={(e) => changeStickerSize(parseInt(e.target.value))}
+                    className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+                    style={{ accentColor: 'var(--accent)' }}
+                  />
+
+                  {/* Quick Size Presets */}
+                  <div className="flex gap-1.5 pt-1">
+                    {[
+                      { label: 'S', size: 28 },
+                      { label: 'M', size: 42 },
+                      { label: 'L', size: 60 },
+                      { label: 'XL', size: 84 },
+                    ].map(s => (
+                      <button
+                        key={s.label}
+                        onClick={() => changeStickerSize(s.size)}
+                        className="flex-1 py-1 rounded-lg text-xs font-medium transition-all"
+                        style={stickerSize === s.size
+                          ? { background: 'var(--accent)', color: 'white' }
+                          : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                        }
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedStickerId && (
+                    <div className="flex gap-1.5 pt-1">
+                      <button
+                        onClick={() => duplicateSticker(selectedStickerId)}
+                        className="flex-1 py-1 rounded-lg text-xs font-medium border transition-all"
+                        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                      >
+                        📋 Duplicate
+                      </button>
+                      <button
+                        onClick={() => removeSticker(selectedStickerId)}
+                        className="flex-1 py-1 rounded-lg text-xs font-medium text-white transition-all"
+                        style={{ background: '#e07b54' }}
+                      >
+                        🗑 Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sticker Category Tabs */}
+                <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+                  {STICKER_CATEGORIES.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setStickerCategory(c.id)}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1 transition-all"
+                      style={stickerCategory === c.id
+                        ? { background: 'var(--accent)', color: 'white' }
+                        : { background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                      }
+                    >
+                      <span>{c.icon}</span>
+                      <span>{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Stickers Grid */}
+                <div className="sticker-grid">
+                  {currentStickersList.map((emoji, i) => (
+                    <button
+                      key={i}
+                      onClick={() => addSticker(emoji)}
+                      className="sticker-btn text-2xl transition-transform hover:scale-125 active:scale-95"
+                      title="Tap to add"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+
+                {stickers.length > 0 && (
+                  <button
+                    onClick={() => { setStickers([]); setSelectedStickerId(null); }}
+                    className="w-full py-2 rounded-full text-xs font-medium transition-all"
+                    style={{ background: 'var(--accent-lighter)', color: 'var(--accent)', border: '1px solid var(--border)' }}
                   >
-                    {frame.id === 'none' ? '⊘ None' : frame.label}
+                    🗑 Clear all {stickers.length} stickers
                   </button>
-                ))}
+                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Stickers */}
-          {tab === 'stickers' && (
-            <div className="px-4 pb-4">
-              <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Tap to add · drag to move</div>
-              <div className="sticker-grid">
-                {STICKERS.map((emoji, i) => (
-                  <button key={i} onClick={() => addSticker(emoji)} className="sticker-btn">{emoji}</button>
-                ))}
+            {/* TAB 4: SHARE */}
+            {tab === 'share' && (
+              <div className="space-y-3 pt-1">
+                <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                  Share your edited photo
+                </div>
+
+                {typeof navigator !== 'undefined' && 'share' in navigator && (
+                  <button
+                    onClick={() => handleShare('native')}
+                    disabled={isSaving}
+                    className="w-full py-2.5 rounded-full text-xs font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #e07b54, #c85e38)', boxShadow: '0 3px 10px rgba(224,123,84,0.3)' }}
+                  >
+                    📤 Share via Device
+                  </button>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: 'twitter', label: '𝕏 Twitter', bg: '#e8f4fd', color: '#1da1f2', border: '#b8d9f5' },
+                    { key: 'whatsapp', label: '💬 WhatsApp', bg: '#e8f8ed', color: '#25d366', border: '#a8dfc0' },
+                    { key: 'facebook', label: '👍 Facebook', bg: '#eaedfa', color: '#1877f2', border: '#b0c0f0' },
+                    { key: 'pinterest', label: '📌 Pinterest', bg: '#fde8e8', color: '#e60023', border: '#f0b0b0' },
+                  ].map(p => (
+                    <button
+                      key={p.key}
+                      onClick={() => handleShare(p.key)}
+                      disabled={isSaving}
+                      className="py-2.5 rounded-full text-xs font-semibold transition-all hover:scale-105 disabled:opacity-50"
+                      style={{ background: p.bg, color: p.color, border: `1px solid ${p.border}` }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleCopyLink}
+                  className="w-full py-2.5 rounded-full text-xs font-semibold border transition-all"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
+                >
+                  📋 Copy Image URL
+                </button>
               </div>
-              {stickers.length > 0 && (
-                <button onClick={() => setStickers([])}
-                  className="mt-3 w-full py-2 rounded-full text-xs font-medium"
-                  style={{ background: '#fdeee5', color: '#e07b54', border: '1px solid #f0d8cc' }}
-                >🗑 Clear all stickers</button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Share */}
-          {tab === 'share' && (
-            <div className="px-4 pb-4 space-y-2">
-              <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Share your photo</div>
-              {typeof navigator !== 'undefined' && 'share' in navigator && (
-                <button onClick={() => handleShare('native')}
-                  className="w-full py-2.5 rounded-full text-xs font-semibold text-white transition-all hover:scale-105"
-                  style={{ background: 'linear-gradient(135deg, #e07b54, #c85e38)', boxShadow: '0 3px 10px rgba(224,123,84,0.3)' }}
-                >📤 Share via Device</button>
-              )}
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { key: 'twitter', label: '𝕏 Twitter', bg: '#e8f4fd', color: '#1da1f2', border: '#b8d9f5' },
-                  { key: 'whatsapp', label: '💬 WhatsApp', bg: '#e8f8ed', color: '#25d366', border: '#a8dfc0' },
-                  { key: 'facebook', label: '👍 Facebook', bg: '#eaedfa', color: '#1877f2', border: '#b0c0f0' },
-                  { key: 'pinterest', label: '📌 Pinterest', bg: '#fde8e8', color: '#e60023', border: '#f0b0b0' },
-                ].map(p => (
-                  <button key={p.key} onClick={() => handleShare(p.key)}
-                    className="py-2.5 rounded-full text-xs font-semibold transition-all hover:scale-105"
-                    style={{ background: p.bg, color: p.color, border: `1px solid ${p.border}` }}
-                  >{p.label}</button>
-                ))}
-              </div>
-              <button onClick={handleCopyLink}
-                className="w-full py-2.5 rounded-full text-xs font-semibold border transition-all"
-                style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
-              >📋 Copy Image URL</button>
-            </div>
-          )}
+          {/* Action Footer: Update in Gallery & Download Buttons */}
+          <div
+            className="p-3.5 shrink-0 flex flex-col gap-2"
+            style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-card)' }}
+          >
+            {/* Requirement 4: Update the existing photo in gallery */}
+            <button
+              onClick={handleUpdateInGallery}
+              disabled={isSaving}
+              className="w-full py-2.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md"
+              style={{
+                background: 'linear-gradient(135deg, #e07b54, #c85e38)',
+                boxShadow: '0 4px 14px rgba(224,123,84,0.35)',
+              }}
+            >
+              <span>💾</span>
+              <span>{isSaving ? 'Saving Changes...' : 'Update in Gallery'}</span>
+            </button>
 
-          <div style={{ borderTop: '1px solid var(--border)', margin: '0 16px' }} />
-
-          {/* Download */}
-          <div className="p-4">
-            <button onClick={handleDownload}
-              className="w-full py-3 rounded-full text-sm font-semibold text-white transition-all hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #e07b54, #c85e38)', boxShadow: '0 3px 12px rgba(224,123,84,0.35)' }}
-            >⬇ Save Edited Photo</button>
+            {/* Download as new photo */}
+            <button
+              onClick={handleDownload}
+              disabled={isSaving}
+              className="w-full py-2 rounded-full text-xs font-semibold transition-all border hover:bg-orange-50 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              style={{
+                background: 'var(--bg-secondary)',
+                borderColor: 'var(--border)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <span>⬇</span>
+              <span>Download to Device</span>
+            </button>
           </div>
         </div>
       </div>
