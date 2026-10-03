@@ -251,40 +251,47 @@ export default function Home() {
         type={confirmModal.type}
       />
       <div
-        className="min-h-dvh w-screen flex flex-col lg:flex-row lg:h-dvh bg-gradient-to-br from-[#1a1c2c] via-[#131523] to-[#0f101c] text-[#f0f4f8] overflow-x-hidden overflow-y-auto lg:overflow-hidden relative main-container"
-        style={{ "--preview-width": `${previewWidth}%` } as React.CSSProperties}
+        className="min-h-dvh w-screen flex flex-col lg:flex-row lg:h-dvh overflow-x-hidden overflow-y-auto lg:overflow-hidden relative main-container"
+        style={{
+          "--preview-width": `${previewWidth}%`,
+          background: "var(--bg-primary)",
+          color: "var(--text-primary)",
+        } as React.CSSProperties}
       >
-        {/* Animated background elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-pink-500/10 animate-pulse pointer-events-none"></div>
-        <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_30%_20%,rgba(138,43,226,0.2),transparent_60%)] pointer-events-none"></div>
-        <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_70%_80%,rgba(255,105,180,0.2),transparent_60%)] pointer-events-none"></div>
+        {/* Soft warm background decoration */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #fde0cc 0%, transparent 70%)" }}></div>
+          <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #fdd9c6 0%, transparent 70%)" }}></div>
+        </div>
 
         {/* Left Section - Camera & Filters */}
-        <div className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0">
+        <div
+          className="w-full lg:w-[var(--preview-width)] flex flex-col p-4 lg:p-6 gap-4 relative z-10 main-section shrink-0 lg:flex-1 lg:min-h-0"
+          style={{ borderRight: "1px solid var(--border)" }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <div className="relative animated-border rounded-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-500 to-cyan-400 rounded-2xl blur-lg opacity-60 animate-pulse"></div>
-                <div className="relative bg-gradient-to-br from-purple-600 via-pink-500 to-cyan-400 p-3 rounded-xl">
-                  <span className="text-3xl drop-shadow-lg">📸</span>
-                </div>
+              <div className="p-2.5 rounded-2xl shadow-sm" style={{ background: "linear-gradient(135deg, #f4a07a, #e07b54)", boxShadow: "0 4px 12px rgba(224,123,84,0.3)" }}>
+                <span className="text-2xl">📸</span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-md">
+              <h1 className="text-2xl lg:text-3xl font-bold" style={{ color: "var(--accent3)", letterSpacing: "-0.5px" }}>
                 BeautyCam
               </h1>
             </div>
-            <div className="text-xs text-white/60 bg-black/20 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm shadow-lg header-info">
-              <span>Local-First & Privacy-Focused</span>
+            <div className="text-xs px-4 py-2 rounded-full header-info font-medium" style={{ background: "var(--accent-lighter)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+              Local-First & Privacy-Focused
             </div>
           </div>
 
           {/* Camera Viewer */}
           <div
             ref={canvasContainerRef}
-            className="camera-preview relative w-full shrink-0 aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-3xl overflow-hidden bg-black/30 border-2 border-white/10 shadow-2xl group backdrop-blur-sm animated-border"
+            className="camera-preview relative w-full shrink-0 aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-2xl overflow-hidden group"
             style={{
-              boxShadow: "0 25px 50px -12px rgba(138, 43, 226, 0.25)",
+              border: "1px solid var(--border)",
+              background: "#f5ede6",
+              boxShadow: "0 8px 32px rgba(180,100,60,0.1)",
             }}
           >
             <video
@@ -308,16 +315,14 @@ export default function Home() {
             />
 
             {!isActive && (
-              <div className="absolute inset-0 flex items-center justify-center text-white/60 text-center p-5">
-                <div className="animate-pulse">
-                  <div className="text-4xl mb-4">📷</div>
-                  <div className="text-xl mb-2 font-semibold">
+              <div className="absolute inset-0 flex items-center justify-center text-center p-5">
+                <div>
+                  <div className="text-5xl mb-4 opacity-40">📷</div>
+                  <div className="text-lg mb-1 font-semibold" style={{ color: "var(--text-secondary)" }}>
                     Camera is Off
                   </div>
-                  <div className="text-md text-white/70">
-                    Click{" "}
-                    <strong className="text-white/90">Start Camera</strong> to
-                    begin
+                  <div className="text-sm" style={{ color: "var(--text-muted)" }}>
+                    Click <strong style={{ color: "var(--accent)" }}>Start Camera</strong> to begin
                   </div>
                 </div>
               </div>
@@ -325,49 +330,53 @@ export default function Home() {
           </div>
 
           {/* Controls */}
-          <div className="flex gap-3 flex-wrap items-center controls-container">
+          <div className="flex gap-2.5 flex-wrap items-center controls-container">
             <button
               onClick={handleStartCamera}
               disabled={isActive}
-              className="btn-glow pulse-on-hover px-6 py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-green-400 to-cyan-500 text-white border-none shadow-lg shadow-cyan-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-cyan-500/50"
+              className="btn-glow pulse-on-hover px-5 py-2.5 rounded-full text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: "linear-gradient(135deg, #68c97b, #4ab060)", boxShadow: "0 3px 10px rgba(74,176,96,0.3)" }}
             >
               ▶ Start
             </button>
             <button
               onClick={stopCamera}
               disabled={!isActive}
-              className="btn-glow px-6 py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-red-500 to-orange-500 text-white border-none shadow-lg shadow-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-orange-500/50"
+              className="btn-glow px-5 py-2.5 rounded-full text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: "linear-gradient(135deg, #e8826e, #d45c44)", boxShadow: "0 3px 10px rgba(212,92,68,0.3)" }}
             >
               ⏹ Stop
             </button>
             <button
               onClick={handleCapture}
               disabled={!isActive}
-              className="btn-glow pulse-on-hover px-7 py-3.5 rounded-xl text-base font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none shadow-lg shadow-pink-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-pink-500/50"
+              className="btn-glow pulse-on-hover px-6 py-2.5 rounded-full text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: "linear-gradient(135deg, #e07b54, #c85e38)", boxShadow: "0 3px 12px rgba(224,123,84,0.4)" }}
             >
               📸 Capture
             </button>
 
-            <label className="flex gap-2 items-center ml-auto bg-black/20 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-lg mirror-label">
+            <label className="flex gap-2 items-center ml-auto px-4 py-2 rounded-full border cursor-pointer transition-all duration-200 mirror-label" style={{ background: "var(--bg-card)", borderColor: "var(--border)", color: "var(--text-secondary)" }}>
               <input
                 type="checkbox"
                 checked={mirrorImage}
                 onChange={(e) => setMirrorImage(e.target.checked)}
-                className="cursor-pointer accent-purple-500 w-4 h-4"
+                className="cursor-pointer w-3.5 h-3.5"
+                style={{ accentColor: "var(--accent)" }}
               />
-              <span className="text-sm font-medium">🪞 Mirror</span>
+              <span className="text-xs font-medium">🪞 Mirror</span>
             </label>
 
             <button
               onClick={toggleScreenTorch}
               disabled={!isActive}
-              className={`btn-glow px-4 py-2.5 rounded-xl border transition-all duration-300 backdrop-blur-sm shadow-lg ${
-                isScreenTorchOn
-                  ? "bg-yellow-400/90 border-yellow-300 text-black font-semibold"
-                  : "bg-black/20 border-white/10 text-white/80 hover:border-white/20"
-              }`}
+              className="btn-glow px-3.5 py-2 rounded-full border transition-all duration-300 disabled:opacity-40"
+              style={isScreenTorchOn
+                ? { background: "#fbbf24", borderColor: "#f59e0b", color: "#7c3700", fontWeight: 600 }
+                : { background: "var(--bg-card)", borderColor: "var(--border)", color: "var(--text-muted)" }
+              }
             >
-              <span className="text-lg">{isScreenTorchOn ? "💡" : "🔦"}</span>
+              <span className="text-base">{isScreenTorchOn ? "💡" : "🔦"}</span>
             </button>
           </div>
 
@@ -375,13 +384,15 @@ export default function Home() {
           <div className="flex gap-4">
             <button
               onClick={() => setIsPresetsCollapsed(!isPresetsCollapsed)}
-              className="text-left text-sm font-semibold text-white/70 hover:text-white transition-colors"
+              className="text-left text-xs font-semibold transition-colors"
+              style={{ color: "var(--text-muted)" }}
             >
               {isPresetsCollapsed ? "▶ Show Presets" : "▼ Hide Presets"}
             </button>
             <button
               onClick={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
-              className="text-left text-sm font-semibold text-white/70 hover:text-white transition-colors"
+              className="text-left text-xs font-semibold transition-colors"
+              style={{ color: "var(--text-muted)" }}
             >
               {isFiltersCollapsed ? "▶ Show Filters" : "▼ Hide Filters"}
             </button>
@@ -404,14 +415,17 @@ export default function Home() {
         {/* Resizer Handle */}
         <div
           onMouseDown={handleMouseDown}
-          className="w-2.5 cursor-col-resize bg-white/5 hover:bg-white/10 transition-colors duration-300 group resizer hidden lg:flex"
+          className="w-2 cursor-col-resize transition-colors duration-300 resizer hidden lg:flex items-center justify-center"
+          style={{ background: "var(--border)" }}
         >
-          <div className="h-full w-0.5 bg-gradient-to-b from-purple-500 via-pink-500 to-cyan-500 mx-auto opacity-50 group-hover:opacity-100 transition-opacity"></div>
+          <div className="h-16 w-0.5 rounded-full" style={{ background: "var(--accent2)" }}></div>
         </div>
 
         {/* Right Section - Gallery */}
-        <div className="w-full lg:w-[calc(100%_-_var(--preview-width))] border-t-2 lg:border-t-0 lg:border-l-2 border-white/10 bg-black/20 p-4 lg:p-6 flex flex-col backdrop-blur-lg shadow-inner-2xl relative z-10 gallery-section shrink-0 min-h-[50vh] lg:flex-1 lg:min-h-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none"></div>
+        <div
+          className="w-full lg:w-[calc(100%_-_var(--preview-width))] p-4 lg:p-6 flex flex-col relative z-10 gallery-section shrink-0 min-h-[50vh] lg:flex-1 lg:min-h-0"
+          style={{ borderTop: "1px solid var(--border)", background: "var(--bg-secondary)" }}
+        >
           <div className="relative z-10 h-full">
             <Gallery onShowConfirm={showConfirm} />
           </div>

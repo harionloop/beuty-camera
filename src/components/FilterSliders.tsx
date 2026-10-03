@@ -63,9 +63,9 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
 
   return (
     <div className="space-y-4 h-full flex flex-col">
-      <div className="text-sm font-semibold text-white/90 flex items-center justify-between">
+      <div className="text-xs font-semibold flex items-center justify-between" style={{ color: 'var(--text-muted)' }}>
         <span>Adjustments & Effects</span>
-        <span className="text-white/50 text-xs">{sliders.length} controls</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{sliders.length} controls</span>
       </div>
       <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
         {categories.map((category) => {
@@ -74,21 +74,25 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
           
           return (
             <div key={category} className="space-y-3">
-              <div className="text-xs font-bold text-purple-300 uppercase tracking-wider">
+              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent2)' }}>
                 {category}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {categorySliders.map(({ key, label, min, max, step, icon }) => (
                   <div
                     key={key}
-                    className="bg-black/20 p-3 rounded-lg border border-white/10 hover:border-purple-400/50 transition-all duration-300 hover:bg-black/30"
+                    className="p-3 rounded-xl border transition-all duration-200"
+                    style={{
+                      background: 'var(--bg-card)',
+                      borderColor: 'var(--border)',
+                    }}
                   >
-                    <label className="flex items-center justify-between text-xs text-white/80 mb-2">
+                    <label className="flex items-center justify-between text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
                       <span className="flex items-center gap-1.5">
                         <span className="text-sm">{icon}</span>
                         <span className="font-semibold">{label}</span>
                       </span>
-                      <span className="text-white/60 font-mono text-xs bg-white/5 px-1.5 py-0.5 rounded">
+                      <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ color: 'var(--text-muted)', background: 'var(--accent-lighter)' }}>
                         {formatValue(key, filters[key])}
                       </span>
                     </label>
@@ -99,9 +103,9 @@ export default function FilterSliders({ filters, onFilterChange }: FilterSliders
                       step={step}
                       value={filters[key]}
                       onChange={(e) => updateFilter(key, parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
+                      className="w-full h-1.5 rounded-lg appearance-none cursor-pointer slider-thumb"
                       style={{
-                        background: `linear-gradient(to right, #8a2be2 0%, #ff69b4 ${((filters[key] - min) / (max - min)) * 100}%, rgba(255,255,255,0.1) ${((filters[key] - min) / (max - min)) * 100}%)`
+                        background: `linear-gradient(to right, var(--accent) 0%, var(--accent2) ${((filters[key] - min) / (max - min)) * 100}%, var(--border) ${((filters[key] - min) / (max - min)) * 100}%)`
                       }}
                     />
                   </div>
