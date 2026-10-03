@@ -11,6 +11,8 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { savePhoto, updatePhoto, PhotoMeta } from '@/lib/indexeddb';
 import { gsap } from 'gsap';
 import { toast } from 'react-hot-toast';
+import Image from 'next/image';
+import Logo from '../../public/logo.png'
 
 export default function Home() {
   const {
@@ -320,7 +322,7 @@ export default function Home() {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl" style={{ background: "linear-gradient(135deg, #f4a07a, #e07b54)", boxShadow: "0 4px 12px rgba(224,123,84,0.3)" }}>
-                <span className="text-2xl">📸</span>
+                <span className="text-2xl"><Image src={Logo} alt="Logo" width={20} height={20} /></span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold" style={{ color: "var(--accent3)", letterSpacing: "-0.5px" }}>
                 BeautyCam
