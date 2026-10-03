@@ -2,10 +2,12 @@
 
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useCamera, FilterSettings } from '@/hooks/useCamera';
+import { useTheme } from '@/hooks/useTheme';
 import FilterSliders from '@/components/FilterSliders';
 import Gallery from '@/components/Gallery';
 import PresetCategories from '@/components/PresetCategories';
 import ConfirmModal from '@/components/ConfirmModal';
+import ThemeToggle from '@/components/ThemeToggle';
 import { savePhoto, updatePhoto, PhotoMeta } from '@/lib/indexeddb';
 import { gsap } from 'gsap';
 import { toast } from 'react-hot-toast';
@@ -25,6 +27,8 @@ export default function Home() {
     isScreenTorchOn,
     toggleScreenTorch,
   } = useCamera();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const [mirrorImage, setMirrorImage] = useState(true);
@@ -258,10 +262,10 @@ export default function Home() {
           color: "var(--text-primary)",
         } as React.CSSProperties}
       >
-        {/* Soft warm background decoration */}
+        {/* Background decoration — adapts to theme */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #fde0cc 0%, transparent 70%)" }}></div>
-          <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #fdd9c6 0%, transparent 70%)" }}></div>
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-20" style={{ background: isDark ? 'radial-gradient(circle, #8b4a2a 0%, transparent 70%)' : 'radial-gradient(circle, #fde0cc 0%, transparent 70%)' }}></div>
+          <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-20" style={{ background: isDark ? 'radial-gradient(circle, #6b3520 0%, transparent 70%)' : 'radial-gradient(circle, #fdd9c6 0%, transparent 70%)' }}></div>
         </div>
 
         {/* Left Section - Camera & Filters */}
@@ -272,15 +276,18 @@ export default function Home() {
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl shadow-sm" style={{ background: "linear-gradient(135deg, #f4a07a, #e07b54)", boxShadow: "0 4px 12px rgba(224,123,84,0.3)" }}>
+              <div className="p-2.5 rounded-2xl" style={{ background: "linear-gradient(135deg, #f4a07a, #e07b54)", boxShadow: "0 4px 12px rgba(224,123,84,0.3)" }}>
                 <span className="text-2xl">📸</span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold" style={{ color: "var(--accent3)", letterSpacing: "-0.5px" }}>
                 BeautyCam
               </h1>
             </div>
-            <div className="text-xs px-4 py-2 rounded-full header-info font-medium" style={{ background: "var(--accent-lighter)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-              Local-First & Privacy-Focused
+            <div className="flex items-center gap-2">
+              <div className="text-xs px-3 py-1.5 rounded-full header-info font-medium" style={{ background: "var(--accent-lighter)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                Local-First
+              </div>
+              <ThemeToggle />
             </div>
           </div>
 
@@ -290,8 +297,8 @@ export default function Home() {
             className="camera-preview relative w-full shrink-0 aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-2xl overflow-hidden group"
             style={{
               border: "1px solid var(--border)",
-              background: "#f5ede6",
-              boxShadow: "0 8px 32px rgba(180,100,60,0.1)",
+              background: isDark ? '#1e1008' : '#f5ede6',
+              boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(180,100,60,0.1)',
             }}
           >
             <video

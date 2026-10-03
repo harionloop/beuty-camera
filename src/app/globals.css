@@ -21,6 +21,45 @@
   --shadow-card: rgba(180, 100, 60, 0.08);
 }
 
+/* ── Dark Theme ─────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-primary: #1c1510;
+  --bg-secondary: #231a12;
+  --bg-card: #2a1f16;
+  --bg-card-hover: #321f14;
+  --border: #3d2e22;
+  --border-hover: #5a4030;
+  --accent: #e07b54;
+  --accent2: #d4956a;
+  --accent3: #f0a070;
+  --accent-light: rgba(224, 123, 84, 0.15);
+  --accent-lighter: rgba(224, 123, 84, 0.08);
+  --text-primary: #f2e4d6;
+  --text-secondary: #c8a88a;
+  --text-muted: #8a6e5a;
+  --shadow-warm: rgba(200, 100, 60, 0.25);
+  --shadow-card: rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth theme transition */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 250ms;
+  transition-timing-function: ease;
+}
+
+/* Exempt transforms and opacity from the blanket transition */
+img,
+video,
+canvas,
+button,
+input[type="range"] {
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform, filter;
+}
+
+
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);

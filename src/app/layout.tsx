@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BeautyCam — Live Filters & Auto Capture",
-  description: "Beauty camera application with live filters and auto-capture functionality",
+  title: "BeautyCam — Live Filters & Capture",
+  description: "Beauty camera with live filters, frames, stickers and social sharing",
 };
 
 export default function RootLayout({
@@ -24,12 +24,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Anti-flash: set theme before first paint */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('beautycam-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
       >
         {children}
-        <Toaster />
+        <Toaster
+          toastOptions={{
+            style: {
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              fontSize: '13px',
+            },
+          }}
+        />
       </body>
     </html>
   );
